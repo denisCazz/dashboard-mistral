@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabaseServer } from '@/lib/supabase-server';
 import { getOrgIdFromRequest } from '@/lib/api-auth';
 
 // GET - Ottieni tutte le marche
 export async function GET(request: NextRequest) {
   try {
     const orgId = getOrgIdFromRequest(request);
-    const { data: marche, error } = await supabase
+    const { data: marche, error } = await supabaseServer
       .from('marche')
       .select('id, nome')
       .eq('org_id', orgId)
@@ -30,34 +30,48 @@ export async function POST(request: NextRequest) {
     const orgId = getOrgIdFromRequest(request);
     const body = await request.json();
     const { nome } = body;
+    const normalizedNome = String(nome || '').trim();
 
-    if (!nome || !nome.trim()) {
+    if (!normalizedNome) {
       return NextResponse.json(
         { error: 'Il nome della marca è obbligatorio' },
         { status: 400 }
       );
     }
 
-    const { data: marca, error } = await supabase
+    const { data: marca, error } = await supabaseServer
       .from('marche')
-      .insert({ nome: nome.trim(), org_id: orgId })
+      .insert({ nome: normalizedNome, org_id: orgId })
       .select('id, nome')
       .single();
 
     if (error) {
       if (error.code === '23505') {
         // Duplicato - cerca quella esistente
-        const { data: existing } = await supabase
+        const { data: existing } = await supabaseServer
           .from('marche')
           .select('id, nome')
           .eq('org_id', orgId)
-          .eq('nome', nome.trim())
-          .single();
+          .ilike('nome', normalizedNome)
+          .maybeSingle();
         
         if (existing) {
           return NextResponse.json(existing);
         }
+
+        return NextResponse.json(
+          { error: 'Marca già presente nel catalogo' },
+          { status: 409 }
+        );
       }
+
+      if (error.code === '42501') {
+        return NextResponse.json(
+          { error: 'Permessi database insufficienti (RLS). Configura SUPABASE_SERVICE_ROLE_KEY sul server o aggiorna le policy RLS.' },
+          { status: 500 }
+        );
+      }
+
       throw error;
     }
 

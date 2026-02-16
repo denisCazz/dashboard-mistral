@@ -149,12 +149,14 @@ export async function POST(request: NextRequest) {
       .update({ ultimo_accesso: new Date().toISOString() })
       .eq('id', utente.id);
 
+    const resolvedOrgId = utente.org_id || requestedOrgId || 'base';
+
     // Crea token JWT
     const { accessToken, refreshToken } = await createTokenPair({
       id: utente.id,
       username: utente.username,
       ruolo: utente.ruolo,
-      org_id: utente.org_id || 'base',
+      org_id: resolvedOrgId,
     });
 
     // Dati utente (senza password)
@@ -162,7 +164,7 @@ export async function POST(request: NextRequest) {
       id: utente.id,
       username: utente.username,
       ruolo: utente.ruolo,
-      org_id: utente.org_id || 'base',
+      org_id: resolvedOrgId,
       nome: utente.nome,
       cognome: utente.cognome,
       telefono: utente.telefono || '',

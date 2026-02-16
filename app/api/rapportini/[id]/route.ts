@@ -8,6 +8,24 @@ import { InterventoCategoria } from '@/lib/intervento-categorie';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+const CATEGORY_NOTE_PREFIX_REGEX = /^\[cat:(antincendio|manutenzione_elettrica|termoidraulica)\]\s*/i;
+
+function parseCategoriaAndNote(tipoStufa: string, note?: string | null): { categoria: InterventoCategoria; note: string } {
+  const rawNote = note || '';
+  const match = rawNote.match(CATEGORY_NOTE_PREFIX_REGEX);
+  if (match?.[1]) {
+    const categoria = match[1] as InterventoCategoria;
+    const cleanedNote = rawNote.replace(CATEGORY_NOTE_PREFIX_REGEX, '').trim();
+    return { categoria, note: cleanedNote };
+  }
+
+  if (tipoStufa === 'pellet' || tipoStufa === 'legno') {
+    return { categoria: 'termoidraulica', note: rawNote };
+  }
+
+  return { categoria: 'termoidraulica', note: rawNote };
+}
+
 // GET - Ottieni un singolo rapportino
 export async function GET(
   request: NextRequest,
@@ -51,6 +69,8 @@ export async function GET(
       );
     }
 
+    const { categoria, note } = parseCategoriaAndNote(rapportino.tipo_stufa, rapportino.note);
+
     // Trasforma i dati dal formato DB al formato dell'app
     const formattedRapportino: Rapportino = {
       id: rapportino.id,
@@ -76,14 +96,14 @@ export async function GET(
       intervento: {
         data: rapportino.data_intervento,
         ora: rapportino.ora_intervento,
-        tipoStufa: rapportino.tipo_stufa as InterventoCategoria,
+        tipoStufa: categoria,
         marca: rapportino.marca,
         modello: rapportino.modello,
         numeroSerie: rapportino.numero_serie || '',
         tipoIntervento: rapportino.tipo_intervento,
         descrizione: rapportino.descrizione,
         materialiUtilizzati: rapportino.materiali_utilizzati || '',
-        note: rapportino.note || '',
+        note,
         firmaCliente: rapportino.firma_cliente || '',
       },
       dataCreazione: rapportino.data_creazione || rapportino.created_at,

@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react';
 
+const PWA_DISMISS_UNTIL_KEY = 'pwa_install_dismiss_until';
+const DEFAULT_SNOOZE_DAYS = 7;
+
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
@@ -11,6 +14,12 @@ export default function InstallPWA() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showInstallButton, setShowInstallButton] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
+
+  const dismissForDays = (days: number = DEFAULT_SNOOZE_DAYS) => {
+    const dismissUntil = Date.now() + days * 24 * 60 * 60 * 1000;
+    localStorage.setItem(PWA_DISMISS_UNTIL_KEY, String(dismissUntil));
+    setShowInstallButton(false);
+  };
 
   useEffect(() => {
     // Verifica se l'app è già installata
@@ -29,6 +38,12 @@ export default function InstallPWA() {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
+
+      const dismissUntil = Number(localStorage.getItem(PWA_DISMISS_UNTIL_KEY) || '0');
+      if (dismissUntil > Date.now()) {
+        return;
+      }
+
       setShowInstallButton(true);
     };
 
@@ -59,8 +74,10 @@ export default function InstallPWA() {
 
     if (outcome === 'accepted') {
       console.log('Utente ha accettato l\'installazione');
+      localStorage.removeItem(PWA_DISMISS_UNTIL_KEY);
     } else {
       console.log('Utente ha rifiutato l\'installazione');
+      dismissForDays();
     }
 
     setDeferredPrompt(null);
@@ -98,7 +115,7 @@ export default function InstallPWA() {
                 Installa
               </button>
               <button
-                onClick={() => setShowInstallButton(false)}
+                onClick={() => dismissForDays()}
                 className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors text-sm"
               >
                 Dopo
@@ -106,7 +123,7 @@ export default function InstallPWA() {
             </div>
           </div>
           <button
-            onClick={() => setShowInstallButton(false)}
+            onClick={() => dismissForDays()}
             className="flex-shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

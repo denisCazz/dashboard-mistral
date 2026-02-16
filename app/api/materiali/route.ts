@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabaseServer } from '@/lib/supabase-server';
 import { getOrgIdFromRequest } from '@/lib/api-auth';
 
 // GET - Ottieni materiali filtrati per modello
@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const { data: materiali, error } = await supabase
+    const { data: materiali, error } = await supabaseServer
       .from('materiali')
       .select('id, nome, descrizione, modello_id')
       .eq('org_id', orgId)
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { data: modello } = await supabase
+    const { data: modello } = await supabaseServer
       .from('modelli')
       .select('id')
       .eq('org_id', orgId)
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { data: materiale, error } = await supabase
+    const { data: materiale, error } = await supabaseServer
       .from('materiali')
       .insert({ 
         nome: nome.trim(), 
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
     if (error) {
       if (error.code === '23505') {
         // Duplicato - cerca quello esistente
-        const { data: existing } = await supabase
+        const { data: existing } = await supabaseServer
           .from('materiali')
           .select('id, nome, descrizione, modello_id')
           .eq('org_id', orgId)

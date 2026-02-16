@@ -44,6 +44,23 @@ function getAuthHeaders(): HeadersInit {
   return headers;
 }
 
+// Fetch con refresh token automatico su 401
+async function apiFetch(url: string, options: RequestInit = {}, retry = true): Promise<Response> {
+  const response = await fetch(url, {
+    credentials: 'include',
+    ...options,
+  });
+
+  if (response.status === 401 && retry) {
+    const refreshed = await auth.refreshTokens();
+    if (refreshed) {
+      return apiFetch(url, options, false);
+    }
+  }
+
+  return response;
+}
+
 // Helper per costruire query string
 function buildQueryString(params: Record<string, any>): string {
   const searchParams = new URLSearchParams();
@@ -61,9 +78,8 @@ export const api = {
   getRapportini: async (filters?: RapportiniFilters): Promise<Rapportino[]> => {
     const headers = getAuthHeaders();
     const queryString = filters ? buildQueryString(filters) : '';
-    const response = await fetch(`${API_BASE}/rapportini${queryString}`, {
+    const response = await apiFetch(`${API_BASE}/rapportini${queryString}`, {
       headers,
-      credentials: 'include',
     });
     if (!response.ok) {
       throw new Error('Errore nel recupero dei rapportini');
@@ -77,9 +93,8 @@ export const api = {
   getRapportiniPaginated: async (filters?: RapportiniFilters): Promise<PaginatedResponse<Rapportino>> => {
     const headers = getAuthHeaders();
     const queryString = filters ? buildQueryString(filters) : '';
-    const response = await fetch(`${API_BASE}/rapportini${queryString}`, {
+    const response = await apiFetch(`${API_BASE}/rapportini${queryString}`, {
       headers,
-      credentials: 'include',
     });
     if (!response.ok) {
       throw new Error('Errore nel recupero dei rapportini');
@@ -94,7 +109,7 @@ export const api = {
       throw new Error('Utente non autenticato');
     }
 
-    const response = await fetch(`${API_BASE}/rapportini`, {
+    const response = await apiFetch(`${API_BASE}/rapportini`, {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify({
@@ -112,7 +127,7 @@ export const api = {
   // Ottieni un singolo rapportino per ID
   getRapportino: async (id: string): Promise<Rapportino> => {
     const headers = getAuthHeaders();
-    const response = await fetch(`${API_BASE}/rapportini/${id}`, {
+    const response = await apiFetch(`${API_BASE}/rapportini/${id}`, {
       headers,
     });
     if (!response.ok) {
@@ -125,7 +140,7 @@ export const api = {
   // Elimina un rapportino
   deleteRapportino: async (id: string): Promise<void> => {
     const headers = getAuthHeaders();
-    const response = await fetch(`${API_BASE}/rapportini/${id}`, {
+    const response = await apiFetch(`${API_BASE}/rapportini/${id}`, {
       method: 'DELETE',
       headers,
     });
@@ -138,9 +153,8 @@ export const api = {
   // Ottieni statistiche admin
   getStatistics: async () => {
     const headers = getAuthHeaders();
-    const response = await fetch(`${API_BASE}/admin/statistics`, {
+    const response = await apiFetch(`${API_BASE}/admin/statistics`, {
       headers,
-      credentials: 'include',
     });
     if (!response.ok) {
       const error = await response.json();
@@ -152,10 +166,9 @@ export const api = {
   // Invia email di conferma intervento
   sendInterventoEmail: async (rapportino: Rapportino, aziendaNome?: string): Promise<{ success: boolean; message: string }> => {
     const headers = getAuthHeaders();
-    const response = await fetch(`${API_BASE}/email/send`, {
+    const response = await apiFetch(`${API_BASE}/email/send`, {
       method: 'POST',
       headers,
-      credentials: 'include',
       body: JSON.stringify({ rapportino, aziendaNome }),
     });
     const result = await response.json();

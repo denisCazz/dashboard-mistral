@@ -73,6 +73,23 @@ export default function RapportinoForm({ onSave, onCancel }: RapportinoFormProps
   const [showModelloInput, setShowModelloInput] = useState(false);
   const [showMaterialeInput, setShowMaterialeInput] = useState(false);
   const [newMaterialeNome, setNewMaterialeNome] = useState('');
+  const [isSavingMarca, setIsSavingMarca] = useState(false);
+
+  const fetchWithAuth = async (url: string, options: RequestInit = {}, retry = true): Promise<Response> => {
+    const response = await fetch(url, {
+      credentials: 'include',
+      ...options,
+    });
+
+    if (response.status === 401 && retry) {
+      const refreshed = await auth.refreshTokens();
+      if (refreshed) {
+        return fetchWithAuth(url, options, false);
+      }
+    }
+
+    return response;
+  };
 
   // Cerca clienti esistenti quando nome e cognome sono inseriti
   useEffect(() => {
@@ -80,7 +97,7 @@ export default function RapportinoForm({ onSave, onCancel }: RapportinoFormProps
       if (step === 2 && cliente.nome.trim().length >= 2 && cliente.cognome.trim().length >= 2) {
         setIsSearchingClienti(true);
         try {
-          const response = await fetch(
+          const response = await fetchWithAuth(
             `/api/clienti/search?nome=${encodeURIComponent(cliente.nome.trim())}&cognome=${encodeURIComponent(cliente.cognome.trim())}`
           );
           if (response.ok) {
@@ -122,7 +139,7 @@ export default function RapportinoForm({ onSave, onCancel }: RapportinoFormProps
   useEffect(() => {
     const loadMarche = async () => {
       try {
-        const response = await fetch('/api/marche');
+        const response = await fetchWithAuth('/api/marche');
         if (response.ok) {
           const data = await response.json();
           setMarche(data);
@@ -139,7 +156,7 @@ export default function RapportinoForm({ onSave, onCancel }: RapportinoFormProps
     const loadModelli = async () => {
       if (marcaId) {
         try {
-          const response = await fetch(`/api/modelli?marca_id=${marcaId}`);
+          const response = await fetchWithAuth(`/api/modelli?marca_id=${marcaId}`);
           if (response.ok) {
             const data = await response.json();
             setModelli(data);
@@ -164,7 +181,7 @@ export default function RapportinoForm({ onSave, onCancel }: RapportinoFormProps
     const loadMateriali = async () => {
       if (modelloId) {
         try {
-          const response = await fetch(`/api/materiali?modello_id=${modelloId}`);
+          const response = await fetchWithAuth(`/api/materiali?modello_id=${modelloId}`);
           if (response.ok) {
             const data = await response.json();
             setMateriali(data);
@@ -691,27 +708,49 @@ export default function RapportinoForm({ onSave, onCancel }: RapportinoFormProps
                     <button
                       type="button"
                       onClick={async () => {
-                        if (intervento.marca.trim()) {
-                          try {
-                            const response = await fetch('/api/marche', {
-                              method: 'POST',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ nome: intervento.marca.trim() }),
-                            });
-                            if (response.ok) {
-                              const newMarca = await response.json();
-                              setMarche([...marche, newMarca]);
-                              setMarcaId(newMarca.id);
-                            }
-                          } catch (error) {
-                            console.error('Errore creazione marca:', error);
+                        const nomeMarca = intervento.marca.trim();
+                        if (!nomeMarca) return;
+
+                        setIsSavingMarca(true);
+                        try {
+                          const response = await fetchWithAuth('/api/marche', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ nome: nomeMarca }),
+                          });
+
+                          const payload = await response.json();
+                          if (!response.ok) {
+                            throw new Error(payload?.error || 'Errore nel salvataggio della marca');
                           }
+
+                          const newMarca = payload as { id: string; nome: string };
+
+                          const refreshResponse = await fetchWithAuth('/api/marche');
+                          if (refreshResponse.ok) {
+                            const refreshedMarche = await refreshResponse.json();
+                            setMarche(refreshedMarche);
+                          } else {
+                            setMarche((prev) => {
+                              if (prev.some((marca) => marca.id === newMarca.id)) return prev;
+                              return [...prev, newMarca];
+                            });
+                          }
+
+                          setMarcaId(newMarca.id);
+                          setIntervento((prev) => ({ ...prev, marca: newMarca.nome }));
+                          setShowMarcaInput(false);
+                        } catch (error: any) {
+                          console.error('Errore creazione marca:', error);
+                          alert(error?.message || 'Impossibile salvare la marca');
+                        } finally {
+                          setIsSavingMarca(false);
                         }
-                        setShowMarcaInput(false);
                       }}
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                      disabled={isSavingMarca}
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed"
                     >
-                      Salva
+                      {isSavingMarca ? 'Salvataggio...' : 'Salva'}
                     </button>
                     <button
                       type="button"
@@ -779,7 +818,7 @@ export default function RapportinoForm({ onSave, onCancel }: RapportinoFormProps
                       onClick={async () => {
                         if (intervento.modello.trim() && marcaId) {
                           try {
-                            const response = await fetch('/api/modelli', {
+                            const response = await fetchWithAuth('/api/modelli', {
                               method: 'POST',
                               headers: { 'Content-Type': 'application/json' },
                               body: JSON.stringify({ nome: intervento.modello.trim(), marca_id: marcaId }),
@@ -919,7 +958,7 @@ export default function RapportinoForm({ onSave, onCancel }: RapportinoFormProps
                             onClick={async () => {
                               if (newMaterialeNome.trim() && modelloId) {
                                 try {
-                                  const response = await fetch('/api/materiali', {
+                                  const response = await fetchWithAuth('/api/materiali', {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify({ 

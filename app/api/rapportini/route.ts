@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabaseServer as supabase } from '@/lib/supabase-server';
 import { Rapportino } from '@/types';
 import { InterventoCategoria } from '@/lib/intervento-categorie';
 import { getOrgIdFromRequest, getUserIdFromRequest } from '@/lib/api-auth';
@@ -9,6 +9,31 @@ import { checkRateLimit, RATE_LIMIT_CONFIGS, getClientIP, createRateLimitKey } f
 // Cache configuration per Next.js 16.1
 export const dynamic = 'force-dynamic'; // Disabilita caching per dati dinamici
 export const revalidate = 0; // Non cacheare
+
+const CATEGORY_NOTE_PREFIX_REGEX = /^\[cat:(antincendio|manutenzione_elettrica|termoidraulica)\]\s*/i;
+
+function toLegacyTipoStufa(categoria: string): 'pellet' | 'legno' {
+  // Compatibilità DB legacy: constraint su tipo_stufa permette solo pellet/legno
+  // Usiamo pellet come valore tecnico di default.
+  return categoria === 'legno' ? 'legno' : 'pellet';
+}
+
+function parseCategoriaAndNote(tipoStufa: string, note?: string | null): { categoria: InterventoCategoria; note: string } {
+  const rawNote = note || '';
+  const match = rawNote.match(CATEGORY_NOTE_PREFIX_REGEX);
+  if (match?.[1]) {
+    const categoria = match[1] as InterventoCategoria;
+    const cleanedNote = rawNote.replace(CATEGORY_NOTE_PREFIX_REGEX, '').trim();
+    return { categoria, note: cleanedNote };
+  }
+
+  // Se arriva dal DB legacy pellet/legno, lo mostriamo come termoidraulica
+  if (tipoStufa === 'pellet' || tipoStufa === 'legno') {
+    return { categoria: 'termoidraulica', note: rawNote };
+  }
+
+  return { categoria: 'termoidraulica', note: rawNote };
+}
 
 // GET - Ottieni tutti i rapportini (filtrati per utente se operatore)
 export async function GET(request: NextRequest) {
@@ -88,42 +113,46 @@ export async function GET(request: NextRequest) {
     if (error) throw error;
 
     // Trasforma i dati dal formato DB al formato dell'app
-    const formattedRapportini: Rapportino[] = (rapportini || []).map((r: any) => ({
-      id: r.id,
-      operatore: {
-        nome: r.utente?.nome || '',
-        cognome: r.utente?.cognome || '',
-        telefono: r.utente?.telefono || '',
-        email: r.utente?.email || '',
-        qualifica: r.utente?.qualifica || '',
-      },
-      cliente: {
-        nome: r.cliente.nome,
-        cognome: r.cliente.cognome,
-        ragioneSociale: r.cliente.ragione_sociale || '',
-        indirizzo: r.cliente.indirizzo,
-        citta: r.cliente.citta,
-        cap: r.cliente.cap,
-        telefono: r.cliente.telefono,
-        email: r.cliente.email || '',
-        partitaIva: r.cliente.partita_iva || '',
-        codiceFiscale: r.cliente.codice_fiscale || '',
-      },
-      intervento: {
-        data: r.data_intervento,
-        ora: r.ora_intervento,
-        tipoStufa: r.tipo_stufa as InterventoCategoria,
-        marca: r.marca,
-        modello: r.modello,
-        numeroSerie: r.numero_serie || '',
-        tipoIntervento: r.tipo_intervento,
-        descrizione: r.descrizione,
-        materialiUtilizzati: r.materiali_utilizzati || '',
-        note: r.note || '',
-        firmaCliente: r.firma_cliente || '',
-      },
-      dataCreazione: r.data_creazione || r.created_at,
-    }));
+    const formattedRapportini: Rapportino[] = (rapportini || []).map((r: any) => {
+      const { categoria, note } = parseCategoriaAndNote(r.tipo_stufa, r.note);
+
+      return {
+        id: r.id,
+        operatore: {
+          nome: r.utente?.nome || '',
+          cognome: r.utente?.cognome || '',
+          telefono: r.utente?.telefono || '',
+          email: r.utente?.email || '',
+          qualifica: r.utente?.qualifica || '',
+        },
+        cliente: {
+          nome: r.cliente.nome,
+          cognome: r.cliente.cognome,
+          ragioneSociale: r.cliente.ragione_sociale || '',
+          indirizzo: r.cliente.indirizzo,
+          citta: r.cliente.citta,
+          cap: r.cliente.cap,
+          telefono: r.cliente.telefono,
+          email: r.cliente.email || '',
+          partitaIva: r.cliente.partita_iva || '',
+          codiceFiscale: r.cliente.codice_fiscale || '',
+        },
+        intervento: {
+          data: r.data_intervento,
+          ora: r.ora_intervento,
+          tipoStufa: categoria,
+          marca: r.marca,
+          modello: r.modello,
+          numeroSerie: r.numero_serie || '',
+          tipoIntervento: r.tipo_intervento,
+          descrizione: r.descrizione,
+          materialiUtilizzati: r.materiali_utilizzati || '',
+          note,
+          firmaCliente: r.firma_cliente || '',
+        },
+        dataCreazione: r.data_creazione || r.created_at,
+      };
+    });
 
     const totalPages = Math.ceil((count || 0) / filters.limit);
 
@@ -194,8 +223,7 @@ export async function POST(request: NextRequest) {
       .from('utenti')
       .select('id, ruolo, org_id')
       .eq('id', userId)
-      .eq('org_id', orgId)
-      .single();
+      .maybeSingle();
 
     if (utenteError || !utente) {
       return NextResponse.json(
@@ -203,6 +231,8 @@ export async function POST(request: NextRequest) {
         { status: 404 }
       );
     }
+
+    const effectiveOrgId = utente.org_id || orgId;
 
     // Solo operatori possono creare rapportini (admin può vedere tutto ma non creare)
     if (utente.ruolo !== 'operatore') {
@@ -223,7 +253,7 @@ export async function POST(request: NextRequest) {
     let { data: clienteData } = await supabase
       .from('clienti')
       .select('id')
-      .eq('org_id', orgId)
+      .eq('org_id', effectiveOrgId)
       .eq('nome', nomeNormalizzato)
       .eq('cognome', cognomeNormalizzato)
       .eq('telefono', telefonoNormalizzato)
@@ -236,7 +266,7 @@ export async function POST(request: NextRequest) {
       const { data: clienteNomeCognome } = await supabase
         .from('clienti')
         .select('id')
-        .eq('org_id', orgId)
+        .eq('org_id', effectiveOrgId)
         .eq('nome', nomeNormalizzato)
         .eq('cognome', cognomeNormalizzato)
         .limit(1)
@@ -252,7 +282,7 @@ export async function POST(request: NextRequest) {
       const { data: newCliente, error: createClienteError } = await supabase
         .from('clienti')
         .insert({
-          org_id: orgId,
+          org_id: effectiveOrgId,
           nome: nomeNormalizzato,
           cognome: cognomeNormalizzato,
           ragione_sociale: rapportino.cliente.ragioneSociale?.trim() || null,
@@ -272,7 +302,7 @@ export async function POST(request: NextRequest) {
           const { data: existingCliente } = await supabase
             .from('clienti')
             .select('id')
-            .eq('org_id', orgId)
+            .eq('org_id', effectiveOrgId)
             .eq('nome', nomeNormalizzato)
             .eq('cognome', cognomeNormalizzato)
             .eq('telefono', telefonoNormalizzato)
@@ -291,23 +321,29 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const categoriaIntervento = rapportino.intervento.tipoStufa;
+    const dbTipoStufa = toLegacyTipoStufa(categoriaIntervento);
+    const noteConCategoria = categoriaIntervento === 'termoidraulica'
+      ? (rapportino.intervento.note || null)
+      : `[cat:${categoriaIntervento}] ${rapportino.intervento.note || ''}`.trim();
+
     // Crea rapportino usando l'ID utente
     const { data: newRapportino, error: rapportinoError } = await supabase
       .from('rapportini')
       .insert({
-        org_id: orgId,
+        org_id: effectiveOrgId,
         utente_id: userId,
         cliente_id: clienteId,
         data_intervento: rapportino.intervento.data,
         ora_intervento: rapportino.intervento.ora,
-        tipo_stufa: rapportino.intervento.tipoStufa,
+        tipo_stufa: dbTipoStufa,
         marca: rapportino.intervento.marca,
         modello: rapportino.intervento.modello,
         numero_serie: rapportino.intervento.numeroSerie || null,
         tipo_intervento: rapportino.intervento.tipoIntervento,
         descrizione: rapportino.intervento.descrizione,
         materiali_utilizzati: rapportino.intervento.materialiUtilizzati || null,
-        note: rapportino.intervento.note || null,
+        note: noteConCategoria,
         firma_cliente: rapportino.intervento.firmaCliente || null,
         data_creazione: new Date().toISOString(),
       })

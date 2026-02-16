@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken, createTokenPair } from '@/lib/jwt';
-import { supabase } from '@/lib/supabase';
+import { supabaseServer } from '@/lib/supabase-server';
 
 // POST - Refresh token
 export async function POST(request: NextRequest) {
@@ -26,12 +26,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Verifica che l'utente esista ancora e sia attivo
-    const { data: utente, error } = await supabase
+    // Nota: non filtriamo su org_id perché alcuni utenti legacy possono avere org_id nullo
+    // o disallineato rispetto al token, causando falsi "Utente non trovato".
+    const { data: utente, error } = await supabaseServer
       .from('utenti')
       .select('id, username, ruolo, org_id, attivo')
       .eq('id', payload.userId)
-      .eq('org_id', payload.org_id || payload.idsocieta || 'base')
-      .single();
+      .maybeSingle();
 
     if (error || !utente || !utente.attivo) {
       const response = NextResponse.json(
@@ -43,12 +44,14 @@ export async function POST(request: NextRequest) {
       return response;
     }
 
+    const normalizedOrgId = utente.org_id || payload.org_id || payload.idsocieta || 'base';
+
     // Crea nuovi token
     const { accessToken, refreshToken: newRefreshToken } = await createTokenPair({
       id: utente.id,
       username: utente.username,
       ruolo: utente.ruolo,
-      org_id: utente.org_id || 'base',
+      org_id: normalizedOrgId,
     });
 
     const response = NextResponse.json({ 
