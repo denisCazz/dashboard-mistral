@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  color: rgb(17, 24, 39); /* gray-900 */
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(249, 250, 251) /* gray-50 */
+    )
+    rgb(249, 250, 251);
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Assicura che il testo negli input sia sempre visibile */
+input, textarea, select {
+  color: rgb(17, 24, 39); /* gray-900 */
+}
+
+.dark input, .dark textarea, .dark select {
+  color: rgb(255, 255, 255); /* white */
+}
+
+.dark select option {
+  background-color: rgb(55, 65, 81); /* gray-700 */
+  color: rgb(255, 255, 255); /* white */
+}
+
+input::placeholder, textarea::placeholder {
+  color: rgb(156, 163, 175); /* gray-400 */
+}
+
+.dark input::placeholder, .dark textarea::placeholder {
+  color: rgb(107, 114, 128); /* gray-500 - più scuro per dark mode */
+}
+
+/* Animazioni per il modal */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.animate-slideUp {
+  animation: slideUp 0.3s ease-out;
+}
+
+/* Nascondi scrollbar ma mantieni lo scroll */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
+}
