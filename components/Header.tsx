@@ -84,14 +84,14 @@ export default function Header({ settings, onLogout, onNewRapportino, onExportPD
             ) : (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src="/logo.png"
-                alt="Bitora - Gestione Rapportini"
+                src="/logo.jpg"
+                alt="Mistral Impianti - Gestionale Interventi"
                 className="h-8 w-auto object-contain"
               />
             )}
             <div>
               <h2 className="font-bold text-gray-900 dark:text-white text-sm">
-                {settings.nomeAzienda || 'Bitora - Gestione Rapportini'}
+                {settings.nomeAzienda || 'Mistral Impianti - Gestionale Interventi'}
               </h2>
             </div>
           </div>
@@ -148,6 +148,17 @@ export default function Header({ settings, onLogout, onNewRapportino, onExportPD
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
             </svg>
             Dashboard
+          </Link>
+
+          <Link
+            href="/#moduli"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="flex items-center gap-4 px-5 py-4 rounded-xl text-lg font-semibold transition-all text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:text-indigo-600 dark:hover:text-indigo-400"
+          >
+            <svg className="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+            Moduli
           </Link>
           
           {onNewRapportino && (
@@ -236,17 +247,17 @@ export default function Header({ settings, onLogout, onNewRapportino, onExportPD
                 ) : (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src="/logo.png"
-                    alt="Bitora - Gestione Rapportini"
+                    src="/logo.jpg"
+                    alt="Mistral Impianti - Gestionale Interventi"
                     className="h-9 w-auto object-contain"
                   />
                 )}
                 <div className="hidden sm:block">
                   <h1 className="font-bold text-gray-900 dark:text-white text-lg leading-tight">
-                    {settings.nomeAzienda || 'Bitora - Gestione Rapportini'}
+                    {settings.nomeAzienda || 'Mistral Impianti - Gestionale Interventi'}
                   </h1>
                   <p className="text-xs text-gray-500 dark:text-gray-400 leading-tight">
-                    Software Gestionale Stufe
+                    Gestionale interventi e manutenzioni
                   </p>
                 </div>
               </Link>
@@ -266,6 +277,16 @@ export default function Header({ settings, onLogout, onNewRapportino, onExportPD
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                     </svg>
                     Dashboard
+                  </Link>
+
+                  <Link
+                    href="/#moduli"
+                    className="px-4 py-2.5 rounded-lg text-base font-semibold transition-all flex items-center gap-2 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-indigo-600 dark:hover:text-indigo-400"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                    Moduli
                   </Link>
                   
                   {onNewRapportino && (
@@ -358,7 +379,7 @@ export default function Header({ settings, onLogout, onNewRapportino, onExportPD
                           {user.nome} {user.cognome}
                         </p>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                          {user.email || `${user.ruolo}@bitora.it`}
+                          {user.email || `${user.ruolo}@mistralimpianti.it`}
                         </p>
                       </div>
                       {onLogout && (

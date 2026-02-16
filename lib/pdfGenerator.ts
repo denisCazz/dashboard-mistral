@@ -1,5 +1,6 @@
 import { Rapportino, AziendaSettings } from '@/types';
 import { format } from 'date-fns';
+import { getCategoriaLabel } from '@/lib/intervento-categorie';
 
 
 export const generatePDF = async (rapportino: Rapportino, settings: AziendaSettings) => {
@@ -51,7 +52,7 @@ export const generatePDF = async (rapportino: Rapportino, settings: AziendaSetti
   let textX = margin;
   
   // Usa il logo dalle settings o il logo di default
-  const logoToUse = settings.logo || '/logo.png';
+  const logoToUse = settings.logo || '/logo.jpg';
   
   if (logoToUse) {
     try {
@@ -127,12 +128,12 @@ export const generatePDF = async (rapportino: Rapportino, settings: AziendaSetti
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(22);
   doc.setFont('helvetica', 'bold');
-  const nomeAzienda = settings.nomeAzienda || 'Bitora - Gestione Rapportini';
+  const nomeAzienda = settings.nomeAzienda || 'Mistral Impianti - Gestionale Interventi';
   doc.text(nomeAzienda, textX, 20);
   
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  doc.text('Sistema Gestione Interventi Stufe', textX, 27);
+  doc.text('Sistema gestione interventi e manutenzioni impiantistiche', textX, 27);
   
   yPos = 45;
 
@@ -281,10 +282,10 @@ export const generatePDF = async (rapportino: Rapportino, settings: AziendaSetti
 
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(mediumGray[0], mediumGray[1], mediumGray[2]);
-  doc.text('Tipo Stufa:', margin, yPos);
+  doc.text('Categoria Impianto:', margin, yPos);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(darkGray[0], darkGray[1], darkGray[2]);
-  doc.text(rapportino.intervento.tipoStufa === 'pellet' ? 'Pellet' : 'Legno', margin + 45, yPos);
+  doc.text(getCategoriaLabel(rapportino.intervento.tipoStufa), margin + 45, yPos);
   yPos += 6;
 
   doc.setFont('helvetica', 'normal');
@@ -406,10 +407,10 @@ export const generatePDF = async (rapportino: Rapportino, settings: AziendaSetti
   const footerText1 = `Rapportino creato il ${format(new Date(rapportino.dataCreazione), 'dd/MM/yyyy HH:mm')}`;
   doc.text(footerText1, pageWidth / 2, pageHeight - 15, { align: 'center' });
   doc.setFontSize(6);
-  const footerText2 = 'Bitora Software Gestionale Stufe è un prodotto di Bitora.it';
+  const footerText2 = 'Mistral Impianti - Sistema gestionale interventi';
   doc.text(footerText2, pageWidth / 2, pageHeight - 11, { align: 'center' });
   doc.setFontSize(5);
-  const footerText3 = `© ${new Date().getFullYear()} Bitora.it - Tutti i diritti riservati`;
+  const footerText3 = `© ${new Date().getFullYear()} Mistral Impianti S.R.L. - Tutti i diritti riservati`;
   doc.text(footerText3, pageWidth / 2, pageHeight - 7, { align: 'center' });
 
   return doc;

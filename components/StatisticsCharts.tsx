@@ -20,6 +20,7 @@ import {
 } from 'recharts';
 import { format, parseISO, startOfMonth, endOfMonth, eachMonthOfInterval, subMonths } from 'date-fns';
 import { it } from 'date-fns/locale';
+import { INTERVENTO_CATEGORIE, getCategoriaLabel } from '@/lib/intervento-categorie';
 
 interface ClienteStatistiche {
   cliente: {
@@ -35,8 +36,7 @@ interface ClienteStatistiche {
   }>;
   statistiche: {
     totale: number;
-    pellet: number;
-    legno: number;
+    categorie: Record<string, number>;
     tipiIntervento: Record<string, number>;
   };
 }
@@ -47,8 +47,9 @@ interface StatisticsChartsProps {
 
 // Palette con colori ad alto contrasto
 const CHART_COLORS = {
-  pellet: '#ef4444',    // Rosso vivo
-  legno: '#22c55e',     // Verde brillante
+  antincendio: '#ef4444',
+  manutenzione_elettrica: '#3b82f6',
+  termoidraulica: '#f59e0b',
   primary: '#3b82f6',   // Blu
   secondary: '#a855f7', // Viola
   accent: '#f59e0b',    // Ambra
@@ -63,12 +64,22 @@ const BAR_COLORS = ['#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#a855f7', '#ec4
 export default function StatisticsCharts({ data }: StatisticsChartsProps) {
   // Dati per grafico a torta tipo stufa
   const pieData = useMemo(() => {
-    const totalPellet = data.reduce((sum, s) => sum + s.statistiche.pellet, 0);
-    const totalLegno = data.reduce((sum, s) => sum + s.statistiche.legno, 0);
-    return [
-      { name: 'Pellet', value: totalPellet, color: CHART_COLORS.pellet },
-      { name: 'Legno', value: totalLegno, color: CHART_COLORS.legno },
-    ];
+    const totals = INTERVENTO_CATEGORIE.reduce((acc, categoria) => {
+      acc[categoria] = 0;
+      return acc;
+    }, {} as Record<string, number>);
+
+    data.forEach((stat) => {
+      INTERVENTO_CATEGORIE.forEach((categoria) => {
+        totals[categoria] += stat.statistiche.categorie?.[categoria] || 0;
+      });
+    });
+
+    return INTERVENTO_CATEGORIE.map((categoria) => ({
+      name: getCategoriaLabel(categoria),
+      value: totals[categoria],
+      color: CHART_COLORS[categoria],
+    }));
   }, [data]);
 
   // Dati per grafico tipi intervento
@@ -97,24 +108,28 @@ export default function StatisticsCharts({ data }: StatisticsChartsProps) {
       const monthStart = startOfMonth(month);
       const monthEnd = endOfMonth(month);
       
-      let pellet = 0;
-      let legno = 0;
+      const categorie = {
+        antincendio: 0,
+        manutenzione_elettrica: 0,
+        termoidraulica: 0,
+      };
 
       data.forEach((stat) => {
         stat.rapportini.forEach((r) => {
           const date = parseISO(r.dataIntervento);
           if (date >= monthStart && date <= monthEnd) {
-            if (r.tipoStufa === 'pellet') pellet++;
-            else legno++;
+            const key = r.tipoStufa === 'pellet' || r.tipoStufa === 'legno' ? 'termoidraulica' : r.tipoStufa;
+            if (key in categorie) {
+              categorie[key as keyof typeof categorie]++;
+            }
           }
         });
       });
 
       return {
         name: format(month, 'MMM yy', { locale: it }),
-        pellet,
-        legno,
-        totale: pellet + legno,
+        ...categorie,
+        totale: categorie.antincendio + categorie.manutenzione_elettrica + categorie.termoidraulica,
       };
     });
   }, [data]);
@@ -126,8 +141,9 @@ export default function StatisticsCharts({ data }: StatisticsChartsProps) {
       .slice(0, 5)
       .map((stat) => ({
         name: `${stat.cliente.nome} ${stat.cliente.cognome}`.substring(0, 15),
-        pellet: stat.statistiche.pellet,
-        legno: stat.statistiche.legno,
+        antincendio: stat.statistiche.categorie?.antincendio || 0,
+        manutenzione_elettrica: stat.statistiche.categorie?.manutenzione_elettrica || 0,
+        termoidraulica: stat.statistiche.categorie?.termoidraulica || 0,
       }));
   }, [data]);
 
@@ -143,10 +159,10 @@ export default function StatisticsCharts({ data }: StatisticsChartsProps) {
     <div className="space-y-8">
       {/* Prima riga: Pie chart e Trend */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Distribuzione Tipo Stufa */}
+        {/* Distribuzione categorie impianto */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Distribuzione Tipo Stufa
+            Distribuzione categorie impianto
           </h3>
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>
@@ -183,21 +199,30 @@ export default function StatisticsCharts({ data }: StatisticsChartsProps) {
               <Legend />
               <Area
                 type="monotone"
-                dataKey="pellet"
+                dataKey="antincendio"
                 stackId="1"
-                stroke={CHART_COLORS.pellet}
-                fill={CHART_COLORS.pellet}
+                stroke={CHART_COLORS.antincendio}
+                fill={CHART_COLORS.antincendio}
                 fillOpacity={0.7}
-                name="Pellet"
+                name="Antincendio"
               />
               <Area
                 type="monotone"
-                dataKey="legno"
+                dataKey="manutenzione_elettrica"
                 stackId="1"
-                stroke={CHART_COLORS.legno}
-                fill={CHART_COLORS.legno}
+                stroke={CHART_COLORS.manutenzione_elettrica}
+                fill={CHART_COLORS.manutenzione_elettrica}
                 fillOpacity={0.7}
-                name="Legno"
+                name="Manutenzione Elettrica"
+              />
+              <Area
+                type="monotone"
+                dataKey="termoidraulica"
+                stackId="1"
+                stroke={CHART_COLORS.termoidraulica}
+                fill={CHART_COLORS.termoidraulica}
+                fillOpacity={0.7}
+                name="Termoidraulica"
               />
             </AreaChart>
           </ResponsiveContainer>
@@ -238,8 +263,9 @@ export default function StatisticsCharts({ data }: StatisticsChartsProps) {
               <YAxis tick={{ fontSize: 12 }} />
               <Tooltip />
               <Legend />
-              <Bar dataKey="pellet" stackId="a" fill={CHART_COLORS.pellet} name="Pellet" radius={[0, 0, 0, 0]} />
-              <Bar dataKey="legno" stackId="a" fill={CHART_COLORS.legno} name="Legno" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="antincendio" stackId="a" fill={CHART_COLORS.antincendio} name="Antincendio" radius={[0, 0, 0, 0]} />
+              <Bar dataKey="manutenzione_elettrica" stackId="a" fill={CHART_COLORS.manutenzione_elettrica} name="Manutenzione Elettrica" radius={[0, 0, 0, 0]} />
+              <Bar dataKey="termoidraulica" stackId="a" fill={CHART_COLORS.termoidraulica} name="Termoidraulica" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

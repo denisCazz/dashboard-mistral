@@ -1,3 +1,5 @@
+import { InterventoCategoria } from '@/lib/intervento-categorie';
+
 export interface Operatore {
   nome: string;
   cognome: string;
@@ -22,7 +24,7 @@ export interface Cliente {
 export interface Intervento {
   data: string;
   ora: string;
-  tipoStufa: 'pellet' | 'legno';
+  tipoStufa: InterventoCategoria;
   marca: string;
   modello: string;
   numeroSerie?: string;

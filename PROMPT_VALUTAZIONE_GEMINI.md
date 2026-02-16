@@ -9,7 +9,7 @@
 
 ## 📎 ASSET INCLUSI
 
-**Logo del Brand:** Il file `public/logo.png` è disponibile e dovrebbe essere analizzato visivamente per valutare:
+**Logo del Brand:** Il file `public/logo.jpg` è disponibile e dovrebbe essere analizzato visivamente per valutare:
 - Qualità del design e professionalità
 - Impatto sul valore percepito del prodotto
 - Adeguatezza per il target di mercato
@@ -60,9 +60,9 @@ Il prodotto dispone di un **logo professionale e moderno** che comunica immediat
 - **Produttore:** Bitora.it
 - **Copyright:** © Bitora.it - Tutti i diritti riservati
 - **Tagline:** "Software Gestionale Stufe" - Comunicazione chiara del settore di applicazione
-- **File Logo:** `public/logo.png` - Logo disponibile in formato PNG ad alta risoluzione
+- **File Logo:** `public/logo.jpg` - Logo disponibile in formato PNG ad alta risoluzione
 
-**Design Logo (analizza il file logo.png incluso):**
+**Design Logo (analizza il file logo.jpg incluso):**
 - Icona stilizzata con gradiente moderno (arancione/rosso caldo + blu/viola freddo)
 - Lettera "B" integrata nell'icona con design arrotondato e moderno
 - Simbolismo visivo che richiama calore/energia (stufe) e fluidità (gestione)
@@ -71,7 +71,7 @@ Il prodotto dispone di un **logo professionale e moderno** che comunica immediat
 - Background trasparente (PNG) per utilizzo versatile
 
 **📎 NOTA IMPORTANTE:** 
-Il file `logo.png` è incluso in questo progetto. Quando analizzi questo prodotto, **valuta visivamente il logo** per:
+Il file `logo.jpg` è incluso in questo progetto. Quando analizzi questo prodotto, **valuta visivamente il logo** per:
 - Qualità del design e professionalità percepita
 - Impatto sul valore percepito del prodotto
 - Potenziale di riconoscibilità del brand
@@ -370,7 +370,7 @@ Il file `logo.png` è incluso in questo progetto. Quando analizzi questo prodott
     - Investimenti necessari
     - Timing per espansione
 
-11. **Valutazione del branding e logo (analizza il file logo.png):**
+11. **Valutazione del branding e logo (analizza il file logo.jpg):**
     - Qualità professionale del design del logo
     - Impatto del branding sul valore percepito del prodotto
     - Come il logo influisce sulla strategia di pricing

@@ -1,12 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import { getUserIdFromRequest } from '@/lib/api-auth';
+import { getOrgIdFromRequest, getUserIdFromRequest } from '@/lib/api-auth';
+
+function normalizeCategoria(categoria: string): string {
+  if (categoria === 'pellet' || categoria === 'legno') {
+    return 'termoidraulica';
+  }
+  return categoria;
+}
 
 // GET - Ottieni statistiche raggruppate per cliente (solo admin)
 export async function GET(request: NextRequest) {
   try {
     // Verifica autenticazione e ruolo admin
     const userId = getUserIdFromRequest(request);
+    const orgId = getOrgIdFromRequest(request);
     const userRole = request.headers.get('x-user-ruolo') || 'operatore';
 
     if (!userId) {
@@ -43,6 +51,7 @@ export async function GET(request: NextRequest) {
           email
         )
       `)
+      .eq('org_id', orgId)
       .order('data_intervento', { ascending: false });
 
     if (error) {
@@ -84,8 +93,7 @@ export async function GET(request: NextRequest) {
           rapportini: [],
           statistiche: {
             totale: 0,
-            pellet: 0,
-            legno: 0,
+            categorie: {} as Record<string, number>,
             ultimoIntervento: null,
             primoIntervento: null,
             tipiIntervento: {} as Record<string, number>,
@@ -108,11 +116,8 @@ export async function GET(request: NextRequest) {
 
       // Aggiorna statistiche
       clienteData.statistiche.totale++;
-      if (rapportino.tipo_stufa === 'pellet') {
-        clienteData.statistiche.pellet++;
-      } else {
-        clienteData.statistiche.legno++;
-      }
+      const categoria = normalizeCategoria(rapportino.tipo_stufa || 'termoidraulica');
+      clienteData.statistiche.categorie[categoria] = (clienteData.statistiche.categorie[categoria] || 0) + 1;
 
       const dataIntervento = new Date(rapportino.data_intervento);
       if (!clienteData.statistiche.ultimoIntervento || dataIntervento > new Date(clienteData.statistiche.ultimoIntervento)) {

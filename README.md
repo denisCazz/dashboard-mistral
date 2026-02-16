@@ -1,10 +1,11 @@
-# Bitora - Gestione Rapportini Stufe
+# Mistral Impianti - Gestionale Interventi
 
-Sistema professionale per la gestione degli interventi su stufe a pellet e legno, con database Supabase e pannello admin per statistiche.
+Sistema professionale per la gestione degli interventi tecnici (elettrici, speciali, antincendio) con sezione rapportini, database Supabase e pannello admin per statistiche.
 
 ## 🚀 Funzionalità
 
 - ✅ Gestione completa rapportini di intervento
+- ✅ Dashboard moduli gestionali (interventi, manutenzioni, scadenze, clienti)
 - ✅ Database Supabase per persistenza dati
 - ✅ Pannello admin con statistiche raggruppate per cliente
 - ✅ UI/UX moderna e professionale
@@ -149,10 +150,8 @@ Dopo aver eseguito lo schema SQL, sono disponibili due utenti:
 - date-fns
 - jsPDF
 
-## 📄 Licenza e Copyright
+## 📄 Copyright
 
-**Prodotto:** Bitora Software Gestionale Stufe  
-**Produttore:** Bitora.it  
-**Copyright:** © Bitora.it - Tutti i diritti riservati
-
-"Bitora Software Gestionale Stufe" è un prodotto di Bitora.it. Il brand Bitora e il logo sono proprietà di Bitora.it.
+**Prodotto:** Mistral Impianti - Gestionale Interventi  
+**Azienda:** Mistral Impianti S.R.L.  
+**Copyright:** © Mistral Impianti S.R.L. - Tutti i diritti riservati

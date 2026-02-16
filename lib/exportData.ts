@@ -26,7 +26,7 @@ export function exportRapportini(rapportini: Rapportino[], options: ExportOption
     'CAP': r.cliente.cap,
     'Telefono Cliente': r.cliente.telefono,
     'Email Cliente': r.cliente.email || '',
-    'Tipo Stufa': r.intervento.tipoStufa,
+    'Categoria Impianto': r.intervento.tipoStufa,
     'Marca': r.intervento.marca,
     'Modello': r.intervento.modello,
     'Numero Serie': r.intervento.numeroSerie || '',
@@ -55,7 +55,7 @@ export function exportRapportini(rapportini: Rapportino[], options: ExportOption
     { wch: 8 },  // CAP
     { wch: 15 }, // Telefono
     { wch: 25 }, // Email
-    { wch: 10 }, // Tipo Stufa
+    { wch: 16 }, // Categoria Impianto
     { wch: 15 }, // Marca
     { wch: 15 }, // Modello
     { wch: 15 }, // Numero Serie
@@ -91,8 +91,8 @@ export function exportStatistiche(statistiche: any[], options: ExportOptions) {
     'Telefono': s.cliente.telefono,
     'Email': s.cliente.email || '',
     'Totale Rapportini': s.statistiche.totale,
-    'Stufe Pellet': s.statistiche.pellet,
-    'Stufe Legno': s.statistiche.legno,
+    'Categoria Pellet': s.statistiche.pellet,
+    'Categoria Legno': s.statistiche.legno,
     'Primo Intervento': s.statistiche.primoIntervento 
       ? format(new Date(s.statistiche.primoIntervento), 'dd/MM/yyyy', { locale: it }) 
       : '',

@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { getOrgIdFromRequest } from '@/lib/api-auth';
 
 // GET - Ottieni materiali filtrati per modello
 export async function GET(request: NextRequest) {
   try {
+    const orgId = getOrgIdFromRequest(request);
     const { searchParams } = new URL(request.url);
     const modelloId = searchParams.get('modello_id');
 
@@ -17,6 +19,7 @@ export async function GET(request: NextRequest) {
     const { data: materiali, error } = await supabase
       .from('materiali')
       .select('id, nome, descrizione, modello_id')
+      .eq('org_id', orgId)
       .eq('modello_id', modelloId)
       .order('nome', { ascending: true });
 
@@ -35,6 +38,7 @@ export async function GET(request: NextRequest) {
 // POST - Crea un nuovo materiale
 export async function POST(request: NextRequest) {
   try {
+    const orgId = getOrgIdFromRequest(request);
     const body = await request.json();
     const { nome, descrizione, modello_id } = body;
 
@@ -52,11 +56,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const { data: modello } = await supabase
+      .from('modelli')
+      .select('id')
+      .eq('org_id', orgId)
+      .eq('id', modello_id)
+      .maybeSingle();
+
+    if (!modello) {
+      return NextResponse.json(
+        { error: 'Modello non valido per la società corrente' },
+        { status: 400 }
+      );
+    }
+
     const { data: materiale, error } = await supabase
       .from('materiali')
       .insert({ 
         nome: nome.trim(), 
         descrizione: descrizione?.trim() || null,
+        org_id: orgId,
         modello_id 
       })
       .select('id, nome, descrizione, modello_id')
@@ -68,6 +87,7 @@ export async function POST(request: NextRequest) {
         const { data: existing } = await supabase
           .from('materiali')
           .select('id, nome, descrizione, modello_id')
+          .eq('org_id', orgId)
           .eq('nome', nome.trim())
           .eq('modello_id', modello_id)
           .single();

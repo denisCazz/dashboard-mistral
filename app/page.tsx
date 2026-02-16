@@ -9,7 +9,7 @@ import { auth } from '@/lib/auth';
 import { api } from '@/lib/api';
 import { Suspense, lazy } from 'react';
 import RapportiniList from '@/components/RapportiniList';
-import Header from '@/components/Header';
+import AppSidebarLayout from '@/components/AppSidebarLayout';
 import InstallPWA from '@/components/InstallPWA';
 
 // Dynamic import per componenti pesanti - migliora il bundle splitting
@@ -120,28 +120,124 @@ export default function Home() {
     router.push('/login');
   };
 
+  const moduliGestionali = [
+    {
+      titolo: 'Rapportini Intervento',
+      descrizione: 'Creazione, storico e stampa dei rapportini tecnici.',
+      stato: 'Attivo',
+      colore: 'text-emerald-600 dark:text-emerald-400',
+      bg: 'bg-emerald-100 dark:bg-emerald-900/30',
+      icona: '📝',
+    },
+    {
+      titolo: 'Interventi Programmati',
+      descrizione: 'Pianificazione attività su impianti elettrici, speciali e antincendio.',
+      stato: 'Roadmap',
+      colore: 'text-indigo-600 dark:text-indigo-400',
+      bg: 'bg-indigo-100 dark:bg-indigo-900/30',
+      icona: '📅',
+    },
+    {
+      titolo: 'Manutenzioni Periodiche',
+      descrizione: 'Gestione ricorrenze e checklist manutentive per cliente e sito.',
+      stato: 'Roadmap',
+      colore: 'text-sky-600 dark:text-sky-400',
+      bg: 'bg-sky-100 dark:bg-sky-900/30',
+      icona: '🛠️',
+    },
+    {
+      titolo: 'Clienti & Sedi',
+      descrizione: 'Anagrafiche clienti, contatti e localizzazioni operative.',
+      stato: 'Parziale',
+      colore: 'text-amber-600 dark:text-amber-400',
+      bg: 'bg-amber-100 dark:bg-amber-900/30',
+      icona: '🏢',
+    },
+    {
+      titolo: 'Scadenze & Compliance',
+      descrizione: 'Monitoraggio scadenze documentali e verifiche impiantistiche.',
+      stato: 'Roadmap',
+      colore: 'text-violet-600 dark:text-violet-400',
+      bg: 'bg-violet-100 dark:bg-violet-900/30',
+      icona: '⏱️',
+    },
+  ];
+
   if (!isAuthenticated) {
     return null; // Mostra nulla mentre verifica l'autenticazione
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      <Header 
-        settings={settings} 
+      <AppSidebarLayout
+        settings={settings}
         onLogout={handleLogout}
-        onNewRapportino={() => setShowForm(true)}
-        onExportPDF={handleExportPDFs}
-      />
-      
-      <main className="container mx-auto px-4 py-8 max-w-7xl">
+        title="Dashboard Mistral Impianti"
+        subtitle="Gestionale operativo per interventi e manutenzioni"
+        actions={(
+          <>
+            <button
+              onClick={() => setShowForm(true)}
+              className="px-3 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm"
+            >
+              Nuovo Rapportino
+            </button>
+            <button
+              onClick={handleExportPDFs}
+              className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
+            >
+              Esporta PDF
+            </button>
+          </>
+        )}
+      >
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Dashboard
-            </h1>
+            Dashboard Mistral Impianti
+          </h1>
           <p className="text-gray-600 dark:text-gray-300">
-            Gestione rapportini di intervento su stufe a pellet e legno
+            Gestionale operativo per interventi su impianti elettrici, speciali e antincendio
           </p>
         </div>
+
+        <section id="moduli" className="mb-8">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-6">
+            <div className="flex items-start justify-between gap-4 mb-5">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Moduli gestionali</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  Base operativa per un gestionale Mistral Impianti più completo
+                </p>
+              </div>
+              <Link
+                href="/admin"
+                className="text-sm font-semibold text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
+              >
+                Vai alle statistiche →
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {moduliGestionali.map((modulo) => (
+                <div
+                  key={modulo.titolo}
+                  className="rounded-lg border border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-900/40"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                      <span>{modulo.icona}</span>
+                      <span>{modulo.titolo}</span>
+                    </h3>
+                    <span className={`text-xs font-semibold px-2 py-1 rounded-full ${modulo.colore} ${modulo.bg}`}>
+                      {modulo.stato}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">{modulo.descrizione}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
 
         {error && (
           <div className="mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
@@ -187,7 +283,7 @@ export default function Home() {
           />
         )}
 
-      </main>
+      </AppSidebarLayout>
       
       <footer className="mt-12 py-6 border-t border-gray-200 dark:border-gray-700">
         <div className="container mx-auto px-4 max-w-7xl">
@@ -195,25 +291,25 @@ export default function Home() {
             <div className="text-sm text-gray-600 dark:text-gray-400 text-center sm:text-left">
               <p>
                 <a 
-                  href="https://bitora.it" 
+                  href="https://www.mistralimpianti.it" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors font-semibold"
                 >
-                  Bitora Software Gestionale Stufe
+                  Mistral Impianti - Gestionale Interventi
                 </a>
-                {' è un prodotto di '}
+                {' è il sistema gestionale dedicato a '}
                 <a 
-                  href="https://bitora.it" 
+                  href="https://www.mistralimpianti.it" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors font-semibold"
                 >
-                  Bitora.it
+                  Mistral Impianti S.R.L.
                 </a>
               </p>
               <p className="text-xs mt-1">
-                © {new Date().getFullYear()} Bitora.it - Tutti i diritti riservati
+                © {new Date().getFullYear()} Mistral Impianti S.R.L. - Tutti i diritti riservati
               </p>
             </div>
             

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import { getUserIdFromRequest } from '@/lib/api-auth';
+import { getOrgIdFromRequest, getUserIdFromRequest } from '@/lib/api-auth';
 import { Rapportino } from '@/types';
+import { InterventoCategoria } from '@/lib/intervento-categorie';
 
 // Cache configuration per Next.js 16.1
 export const dynamic = 'force-dynamic';
@@ -15,6 +16,7 @@ export async function GET(
   try {
     const { id } = await params;
     const userId = getUserIdFromRequest(request);
+    const orgId = getOrgIdFromRequest(request);
     const userRole = request.headers.get('x-user-ruolo') || 'operatore';
 
     if (!userId) {
@@ -32,6 +34,7 @@ export async function GET(
         utente:utenti(id, nome, cognome, telefono, email, qualifica),
         cliente:clienti(*)
       `)
+      .eq('org_id', orgId)
       .eq('id', id);
 
     // Se è un operatore (non admin), verifica che il rapportino appartenga all'utente
@@ -73,7 +76,7 @@ export async function GET(
       intervento: {
         data: rapportino.data_intervento,
         ora: rapportino.ora_intervento,
-        tipoStufa: rapportino.tipo_stufa as 'pellet' | 'legno',
+        tipoStufa: rapportino.tipo_stufa as InterventoCategoria,
         marca: rapportino.marca,
         modello: rapportino.modello,
         numeroSerie: rapportino.numero_serie || '',
@@ -106,6 +109,7 @@ export async function DELETE(
   try {
     const { id } = await params;
     const userId = getUserIdFromRequest(request);
+    const orgId = getOrgIdFromRequest(request);
     const userRole = request.headers.get('x-user-ruolo') || 'operatore';
 
     if (!userId) {
@@ -120,6 +124,7 @@ export async function DELETE(
       const { data: rapportino, error: fetchError } = await supabase
         .from('rapportini')
         .select('utente_id')
+        .eq('org_id', orgId)
         .eq('id', id)
         .single();
 
@@ -141,6 +146,7 @@ export async function DELETE(
     const { error } = await supabase
       .from('rapportini')
       .delete()
+      .eq('org_id', orgId)
       .eq('id', id);
 
     if (error) throw error;

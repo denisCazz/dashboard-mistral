@@ -19,7 +19,7 @@ SMTP_HOST=smtp.example.com
 SMTP_PORT=587
 SMTP_USER=your-email@example.com
 SMTP_PASS=your-password
-EMAIL_FROM=noreply@bitora.it
+EMAIL_FROM=noreply@mistralimpianti.it
 ```
 
 ## Come ottenere le credenziali Supabase:

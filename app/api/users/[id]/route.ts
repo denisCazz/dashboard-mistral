@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import bcrypt from 'bcryptjs';
 import { updateUserSchema, changePasswordSchema, validateRequest } from '@/lib/validation';
+import { getOrgIdFromRequest } from '@/lib/api-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,6 +15,7 @@ export async function GET(
     const { id } = await params;
     const userRole = request.headers.get('x-user-ruolo');
     const currentUserId = request.headers.get('x-user-id');
+    const orgId = getOrgIdFromRequest(request);
 
     // Solo admin può vedere altri utenti, operatore solo se stesso
     if (userRole !== 'admin' && currentUserId !== id) {
@@ -26,6 +28,7 @@ export async function GET(
     const { data: utente, error } = await supabase
       .from('utenti')
       .select('id, username, ruolo, nome, cognome, telefono, email, qualifica, attivo, ultimo_accesso, created_at')
+      .eq('org_id', orgId)
       .eq('id', id)
       .single();
 
@@ -55,6 +58,7 @@ export async function PATCH(
     const { id } = await params;
     const userRole = request.headers.get('x-user-ruolo');
     const currentUserId = request.headers.get('x-user-id');
+    const orgId = getOrgIdFromRequest(request);
 
     // Solo admin può modificare altri utenti
     const isAdmin = userRole === 'admin';
@@ -97,6 +101,7 @@ export async function PATCH(
     const { data: updatedUser, error } = await supabase
       .from('utenti')
       .update(updateData)
+      .eq('org_id', orgId)
       .eq('id', id)
       .select('id, username, ruolo, nome, cognome, telefono, email, qualifica, attivo')
       .single();
@@ -122,6 +127,7 @@ export async function DELETE(
     const { id } = await params;
     const userRole = request.headers.get('x-user-ruolo');
     const currentUserId = request.headers.get('x-user-id');
+    const orgId = getOrgIdFromRequest(request);
 
     if (userRole !== 'admin') {
       return NextResponse.json(
@@ -142,12 +148,14 @@ export async function DELETE(
     const { count } = await supabase
       .from('utenti')
       .select('*', { count: 'exact', head: true })
+      .eq('org_id', orgId)
       .eq('ruolo', 'admin')
       .eq('attivo', true);
 
     const { data: userToDelete } = await supabase
       .from('utenti')
       .select('ruolo')
+      .eq('org_id', orgId)
       .eq('id', id)
       .single();
 
@@ -161,6 +169,7 @@ export async function DELETE(
     const { error } = await supabase
       .from('utenti')
       .delete()
+      .eq('org_id', orgId)
       .eq('id', id);
 
     if (error) throw error;

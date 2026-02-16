@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Rapportino, Operatore, Cliente, Intervento } from '@/types';
 import { format } from 'date-fns';
 import { auth } from '@/lib/auth';
+import { INTERVENTO_CATEGORIE, getCategoriaLabel } from '@/lib/intervento-categorie';
 
 interface RapportinoFormProps {
   onSave: (rapportino: Rapportino) => void;
@@ -48,7 +49,7 @@ export default function RapportinoForm({ onSave, onCancel }: RapportinoFormProps
   const [intervento, setIntervento] = useState<Intervento>({
     data: format(new Date(), 'yyyy-MM-dd'),
     ora: format(new Date(), 'HH:mm'),
-    tipoStufa: 'pellet',
+    tipoStufa: 'antincendio',
     marca: '',
     modello: '',
     numeroSerie: '',
@@ -628,16 +629,19 @@ export default function RapportinoForm({ onSave, onCancel }: RapportinoFormProps
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-100 mb-1">
-                Tipo Stufa <span className="text-red-500">*</span>
+                Categoria Impianto <span className="text-red-500">*</span>
               </label>
               <select
                 value={intervento.tipoStufa}
-                onChange={(e) => setIntervento({ ...intervento, tipoStufa: e.target.value as 'pellet' | 'legno' })}
+                onChange={(e) => setIntervento({ ...intervento, tipoStufa: e.target.value as Intervento['tipoStufa'] })}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
                 required
               >
-                <option value="pellet" className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white">Pellet</option>
-                <option value="legno" className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white">Legno</option>
+                {INTERVENTO_CATEGORIE.map((categoria) => (
+                  <option key={categoria} value={categoria} className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                    {getCategoriaLabel(categoria)}
+                  </option>
+                ))}
               </select>
             </div>
             <div>

@@ -2,11 +2,13 @@ const STORAGE_KEY_AUTH = 'auth_token';
 const STORAGE_KEY_USER = 'user_data';
 const STORAGE_KEY_ACCESS_TOKEN = 'access_token';
 const STORAGE_KEY_REFRESH_TOKEN = 'refresh_token';
+const DEFAULT_ORG_ID = process.env.NEXT_PUBLIC_DEFAULT_ORG_ID || 'mistral';
 
 export interface User {
   id: string;
   username: string;
   ruolo: 'admin' | 'operatore';
+  org_id?: string;
   nome: string;
   cognome: string;
   telefono?: string;
@@ -63,7 +65,7 @@ export const auth = {
           'Content-Type': 'application/json',
         },
         credentials: 'include', // Importante per i cookie
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username, password, org_id: DEFAULT_ORG_ID }),
       });
 
       const data = await response.json();
@@ -163,6 +165,6 @@ export const DEFAULT_OPERATORE = {
   nome: 'Gianfranco',
   cognome: 'Tropini',
   telefono: '+39 333 1234567',
-  email: 'gianfranco.tropini@bitora.it',
+  email: 'gianfranco.tropini@mistralimpianti.it',
   qualifica: 'Tecnico specializzato',
 };

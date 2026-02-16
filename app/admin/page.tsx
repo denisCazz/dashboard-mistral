@@ -8,10 +8,11 @@ import { it } from 'date-fns/locale';
 import { auth } from '@/lib/auth';
 import { api } from '@/lib/api';
 import { storage } from '@/lib/storage';
-import Header from '@/components/Header';
+import AppSidebarLayout from '@/components/AppSidebarLayout';
 import RapportinoDetail from '@/components/RapportinoDetail';
 import { AziendaSettings, Rapportino } from '@/types';
 import { exportStatistiche } from '@/lib/exportData';
+import { INTERVENTO_CATEGORIE, getCategoriaBadgeClass, getCategoriaIcon, getCategoriaLabel } from '@/lib/intervento-categorie';
 
 // Lazy load dei grafici per migliorare il caricamento iniziale
 const StatisticsCharts = lazy(() => import('@/components/StatisticsCharts'));
@@ -36,8 +37,7 @@ interface ClienteStatistiche {
   }>;
   statistiche: {
     totale: number;
-    pellet: number;
-    legno: number;
+    categorie: Record<string, number>;
     ultimoIntervento: string | null;
     primoIntervento: string | null;
     tipiIntervento: Record<string, number>;
@@ -136,8 +136,10 @@ export default function AdminPage() {
 
   const totalRapportini = statistiche.reduce((sum, s) => sum + s.statistiche.totale, 0);
   const totalClienti = statistiche.length;
-  const totalPellet = statistiche.reduce((sum, s) => sum + s.statistiche.pellet, 0);
-  const totalLegno = statistiche.reduce((sum, s) => sum + s.statistiche.legno, 0);
+  const totalsByCategoria = INTERVENTO_CATEGORIE.reduce((acc, categoria) => {
+    acc[categoria] = statistiche.reduce((sum, s) => sum + (s.statistiche.categorie?.[categoria] || 0), 0);
+    return acc;
+  }, {} as Record<string, number>);
 
   if (!isAuthenticated) {
     return null;
@@ -145,39 +147,17 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      <Header 
+      <AppSidebarLayout
         settings={settings}
         onLogout={handleLogout}
-      />
-      
-      <main className="container mx-auto px-4 py-8 max-w-7xl">
-        <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <Link
-                href="/"
-                className="text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-              </Link>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                Pannello Admin - Statistiche
-              </h1>
-            </div>
-            <p className="text-gray-600 dark:text-gray-300">
-              Visualizza i rapportini raggruppati per cliente con statistiche dettagliate
-            </p>
-          </div>
-          <div className="flex gap-3">
+        title="Pannello Admin"
+        subtitle="Statistiche e monitoraggio"
+        actions={
+          <>
             <Link
               href="/admin/users"
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2 transition-colors"
+              className="px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
               Gestione Utenti
             </Link>
             <div className="relative">
@@ -186,11 +166,8 @@ export default function AdminPage() {
                   const dropdown = document.getElementById('export-dropdown');
                   dropdown?.classList.toggle('hidden');
                 }}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 transition-colors"
+                className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
                 Esporta
               </button>
               <div id="export-dropdown" className="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-10">
@@ -214,11 +191,32 @@ export default function AdminPage() {
                 </button>
               </div>
             </div>
+          </>
+        }
+      >
+        <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <Link
+                href="/"
+                className="text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+              </Link>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                Pannello Admin - Statistiche
+              </h1>
+            </div>
+            <p className="text-gray-600 dark:text-gray-300">
+              Visualizza i rapportini raggruppati per cliente con statistiche dettagliate
+            </p>
           </div>
         </div>
 
         {/* Statistiche Generali */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 mb-8">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <div>
@@ -247,29 +245,19 @@ export default function AdminPage() {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Stufe Pellet</p>
-                <p className="text-3xl font-bold text-orange-600 dark:text-orange-400 mt-2">{totalPellet}</p>
-              </div>
-              <div className="bg-orange-100 dark:bg-orange-900/30 rounded-full p-3">
-                <span className="text-2xl">🔥</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Stufe Legno</p>
-                <p className="text-3xl font-bold text-amber-600 dark:text-amber-400 mt-2">{totalLegno}</p>
-              </div>
-              <div className="bg-amber-100 dark:bg-amber-900/30 rounded-full p-3">
-                <span className="text-2xl">🪵</span>
+          {INTERVENTO_CATEGORIE.map((categoria) => (
+            <div key={categoria} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{getCategoriaLabel(categoria)}</p>
+                  <p className="text-3xl font-bold text-primary-600 dark:text-primary-400 mt-2">{totalsByCategoria[categoria] || 0}</p>
+                </div>
+                <div className="bg-gray-100 dark:bg-gray-700 rounded-full p-3">
+                  <span className="text-2xl">{getCategoriaIcon(categoria)}</span>
+                </div>
               </div>
             </div>
-          </div>
+          ))}
         </div>
 
         {/* Grafici Statistiche */}
@@ -416,13 +404,12 @@ export default function AdminPage() {
                         </p>
                         <p className="text-xs text-gray-600 dark:text-gray-400">Rapportini</p>
                       </div>
-                      <div className="flex gap-2">
-                        <div className="px-3 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-200 rounded-full text-sm font-medium">
-                          🔥 {stat.statistiche.pellet}
-                        </div>
-                        <div className="px-3 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 rounded-full text-sm font-medium">
-                          🪵 {stat.statistiche.legno}
-                        </div>
+                      <div className="flex flex-wrap gap-2">
+                        {INTERVENTO_CATEGORIE.map((categoria) => (
+                          <div key={categoria} className={`px-3 py-1 rounded-full text-sm font-medium ${getCategoriaBadgeClass(categoria)}`}>
+                            {getCategoriaIcon(categoria)} {stat.statistiche.categorie?.[categoria] || 0}
+                          </div>
+                        ))}
                       </div>
                       <button className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
                         <svg
@@ -502,13 +489,9 @@ export default function AdminPage() {
                             >
                               <div className="flex items-center gap-3 flex-wrap">
                                 <span
-                                  className={`px-2 py-1 rounded text-xs font-medium ${
-                                    rapportino.tipoStufa === 'pellet'
-                                      ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-200'
-                                      : 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200'
-                                  }`}
+                                  className={`px-2 py-1 rounded text-xs font-medium ${getCategoriaBadgeClass(rapportino.tipoStufa)}`}
                                 >
-                                  {rapportino.tipoStufa === 'pellet' ? '🔥 Pellet' : '🪵 Legno'}
+                                  {getCategoriaIcon(rapportino.tipoStufa)} {getCategoriaLabel(rapportino.tipoStufa)}
                                 </span>
                                 <span className="text-sm font-medium text-gray-900 dark:text-white">
                                   {format(new Date(rapportino.dataIntervento), 'dd/MM/yyyy', { locale: it })}
@@ -531,7 +514,7 @@ export default function AdminPage() {
             ))}
           </div>
         )}
-      </main>
+      </AppSidebarLayout>
 
       {/* Modal dettagli rapportino */}
       {selectedRapportino && (
@@ -558,16 +541,16 @@ export default function AdminPage() {
             <div className="text-sm text-gray-600 dark:text-gray-400 text-center sm:text-left">
               <p>
                 <a 
-                  href="https://bitora.it" 
+                  href="https://www.mistralimpianti.it" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors font-semibold"
                 >
-                  Bitora Software Gestionale Stufe
+                  Mistral Impianti - Gestionale Interventi
                 </a>
-                {' è un prodotto di '}
+                {' è il sistema gestionale dedicato a '}
                 <a 
-                  href="https://bitora.it" 
+                  href="https://www.mistralimpianti.it" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors font-semibold"

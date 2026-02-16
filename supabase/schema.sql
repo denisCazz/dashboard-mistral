@@ -4,7 +4,8 @@
 -- Tabella utenti (per autenticazione)
 CREATE TABLE IF NOT EXISTS utenti (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  username VARCHAR(255) NOT NULL UNIQUE,
+  idsocieta VARCHAR(100) NOT NULL DEFAULT 'default',
+  username VARCHAR(255) NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
   ruolo VARCHAR(20) NOT NULL CHECK (ruolo IN ('admin', 'operatore')),
   nome VARCHAR(255) NOT NULL,
@@ -15,7 +16,8 @@ CREATE TABLE IF NOT EXISTS utenti (
   attivo BOOLEAN DEFAULT true,
   ultimo_accesso TIMESTAMP WITH TIME ZONE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  CONSTRAINT unique_utente_societa_username UNIQUE (idsocieta, username)
 );
 
 -- Indice per ricerca rapida username
@@ -29,11 +31,12 @@ CREATE INDEX IF NOT EXISTS idx_utenti_ruolo ON utenti(ruolo);
 INSERT INTO utenti (username, password_hash, ruolo, nome, cognome, email) VALUES
   ('admin', 'admin123', 'admin', 'Admin', 'Sistema', 'admin@bitora.it'),
   ('operatore', 'operatore123', 'operatore', 'Gianfranco', 'Tropini', 'gianfranco.tropini@bitora.it')
-ON CONFLICT (username) DO NOTHING;
+ON CONFLICT (idsocieta, username) DO NOTHING;
 
 -- Tabella clienti
 CREATE TABLE IF NOT EXISTS clienti (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  idsocieta VARCHAR(100) NOT NULL DEFAULT 'default',
   nome VARCHAR(255) NOT NULL,
   cognome VARCHAR(255) NOT NULL,
   ragione_sociale VARCHAR(255),
@@ -47,13 +50,14 @@ CREATE TABLE IF NOT EXISTS clienti (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   -- Indice per ricerca rapida
-  CONSTRAINT unique_cliente UNIQUE (nome, cognome, telefono)
+  CONSTRAINT unique_cliente UNIQUE (idsocieta, nome, cognome, telefono)
 );
 
 -- Tabella rapportini
 -- Ogni rapportino è associato direttamente a un utente (operatore)
 CREATE TABLE IF NOT EXISTS rapportini (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  idsocieta VARCHAR(100) NOT NULL DEFAULT 'default',
   utente_id UUID NOT NULL REFERENCES utenti(id) ON DELETE RESTRICT,
   cliente_id UUID NOT NULL REFERENCES clienti(id) ON DELETE RESTRICT,
   data_intervento DATE NOT NULL,
@@ -78,6 +82,9 @@ CREATE INDEX IF NOT EXISTS idx_rapportini_utente ON rapportini(utente_id);
 CREATE INDEX IF NOT EXISTS idx_rapportini_data ON rapportini(data_intervento);
 CREATE INDEX IF NOT EXISTS idx_rapportini_tipo_stufa ON rapportini(tipo_stufa);
 CREATE INDEX IF NOT EXISTS idx_clienti_nome_cognome ON clienti(nome, cognome);
+CREATE INDEX IF NOT EXISTS idx_utenti_idsocieta ON utenti(idsocieta);
+CREATE INDEX IF NOT EXISTS idx_clienti_idsocieta ON clienti(idsocieta);
+CREATE INDEX IF NOT EXISTS idx_rapportini_idsocieta ON rapportini(idsocieta);
 
 -- Funzione per aggiornare updated_at automaticamente
 CREATE OR REPLACE FUNCTION update_updated_at_column()

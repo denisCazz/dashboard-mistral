@@ -5,10 +5,11 @@
 import { Rapportino } from '@/types';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
+import { getCategoriaLabel } from '@/lib/intervento-categorie';
 
 // Configurazione email
 const EMAIL_CONFIG = {
-  from: process.env.EMAIL_FROM || 'noreply@bitora.it',
+  from: process.env.EMAIL_FROM || 'noreply@mistralimpianti.it',
   resendApiKey: process.env.RESEND_API_KEY,
   smtpHost: process.env.SMTP_HOST,
   smtpPort: parseInt(process.env.SMTP_PORT || '587'),
@@ -111,7 +112,7 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
 }
 
 // Template email per conferma intervento
-export function getInterventoEmailTemplate(rapportino: Rapportino, aziendaNome: string = 'Bitora - Gestione Rapportini'): EmailOptions {
+export function getInterventoEmailTemplate(rapportino: Rapportino, aziendaNome: string = 'Mistral Impianti - Gestionale Interventi'): EmailOptions {
   const dataIntervento = format(new Date(rapportino.intervento.data), 'dd MMMM yyyy', { locale: it });
   
   const html = `
@@ -137,8 +138,8 @@ export function getInterventoEmailTemplate(rapportino: Rapportino, aziendaNome: 
       <h3 style="margin-top: 0; color: #f97316;">Dettagli Intervento</h3>
       <table style="width: 100%; border-collapse: collapse;">
         <tr>
-          <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6;"><strong>Tipo Stufa:</strong></td>
-          <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6;">${rapportino.intervento.tipoStufa === 'pellet' ? 'Pellet' : 'Legno'}</td>
+          <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6;"><strong>Categoria Impianto:</strong></td>
+          <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6;">${getCategoriaLabel(rapportino.intervento.tipoStufa)}</td>
         </tr>
         <tr>
           <td style="padding: 8px 0; border-bottom: 1px solid #f3f4f6;"><strong>Marca:</strong></td>
@@ -200,7 +201,7 @@ Gentile ${rapportino.cliente.nome} ${rapportino.cliente.cognome},
 Le confermiamo che in data ${dataIntervento} alle ore ${rapportino.intervento.ora} è stato effettuato un intervento tecnico presso il Suo indirizzo.
 
 DETTAGLI INTERVENTO:
-- Tipo Stufa: ${rapportino.intervento.tipoStufa === 'pellet' ? 'Pellet' : 'Legno'}
+- Categoria Impianto: ${getCategoriaLabel(rapportino.intervento.tipoStufa)}
 - Marca: ${rapportino.intervento.marca}
 - Modello: ${rapportino.intervento.modello}
 - Tipo Intervento: ${rapportino.intervento.tipoIntervento}

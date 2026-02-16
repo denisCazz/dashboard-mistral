@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
 import bcrypt from 'bcryptjs';
 import { createTokenPair } from '@/lib/jwt';
 import { loginSchema, validateRequest } from '@/lib/validation';
 import { checkRateLimit, RATE_LIMIT_CONFIGS, getClientIP, createRateLimitKey } from '@/lib/rate-limit';
+import { getOrgIdFromRequest, normalizeOrgId } from '@/lib/api-auth';
+import { createClient } from '@supabase/supabase-js';
 
 // POST - Login utente
 export async function POST(request: NextRequest) {
@@ -42,6 +43,20 @@ export async function POST(request: NextRequest) {
     }
 
     const { username, password } = validation.data;
+    const requestedOrgId = normalizeOrgId(
+      body?.org_id ?? body?.idsocieta ?? getOrgIdFromRequest(request)
+    );
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+
+    const supabaseWithOrg = createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: {
+          'x-org-id': requestedOrgId,
+        },
+      },
+    });
 
     // Cerca utente nel database - supporta sia username che email
     // Username e email sono case-insensitive (non distinguono maiuscole/minuscole)
@@ -52,18 +67,20 @@ export async function POST(request: NextRequest) {
 
     if (isEmail) {
       // Cerca per email (case-insensitive)
-      const result = await supabase
+      const result = await supabaseWithOrg
         .from('utenti')
-        .select('id, username, password_hash, ruolo, nome, cognome, telefono, email, qualifica, attivo')
+        .select('id, username, password_hash, ruolo, org_id, nome, cognome, telefono, email, qualifica, attivo')
+        .eq('org_id', requestedOrgId)
         .ilike('email', username)
         .maybeSingle();
       utente = result.data;
       error = result.error;
     } else {
       // Cerca per username (case-insensitive)
-      const result = await supabase
+      const result = await supabaseWithOrg
         .from('utenti')
-        .select('id, username, password_hash, ruolo, nome, cognome, telefono, email, qualifica, attivo')
+        .select('id, username, password_hash, ruolo, org_id, nome, cognome, telefono, email, qualifica, attivo')
+        .eq('org_id', requestedOrgId)
         .ilike('username', username)
         .maybeSingle();
       utente = result.data;
@@ -75,7 +92,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (error || !utente) {
-      console.log('Utente non trovato:', username);
+      console.log('Utente non trovato:', username, 'org_id:', requestedOrgId);
       return NextResponse.json(
         { error: 'Credenziali non valide' },
         { status: 401 }
@@ -127,7 +144,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Aggiorna ultimo accesso
-    await supabase
+    await supabaseWithOrg
       .from('utenti')
       .update({ ultimo_accesso: new Date().toISOString() })
       .eq('id', utente.id);
@@ -137,6 +154,7 @@ export async function POST(request: NextRequest) {
       id: utente.id,
       username: utente.username,
       ruolo: utente.ruolo,
+      org_id: utente.org_id || 'base',
     });
 
     // Dati utente (senza password)
@@ -144,6 +162,7 @@ export async function POST(request: NextRequest) {
       id: utente.id,
       username: utente.username,
       ruolo: utente.ruolo,
+      org_id: utente.org_id || 'base',
       nome: utente.nome,
       cognome: utente.cognome,
       telefono: utente.telefono || '',

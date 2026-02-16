@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { auth } from '@/lib/auth';
 
+const DEFAULT_ORG_ID = process.env.NEXT_PUBLIC_DEFAULT_ORG_ID || 'mistral';
+
 const QUALIFICHE = [
   'Tecnico specializzato',
   'Tecnico installatore',
@@ -106,6 +108,7 @@ export default function RegisterPage() {
           telefono: formData.telefono,
           email: formData.email,
           qualifica: formData.qualifica,
+          org_id: DEFAULT_ORG_ID,
         }),
       });
 
@@ -132,7 +135,7 @@ export default function RegisterPage() {
         <div className="text-center mb-8">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/logo.png"
+            src="/logo.jpg"
             alt="Logo"
             className="h-32 w-auto object-contain mx-auto mb-6"
             onError={(e) => {
@@ -350,24 +353,24 @@ export default function RegisterPage() {
           <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
             <p>
               <a 
-                href="https://bitora.it" 
+                href="https://www.mistralimpianti.it" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
               >
-                Bitora Software Gestionale Stufe
+                Mistral Impianti - Gestionale Interventi
               </a>
-              {' è un prodotto di '}
+              {' è il sistema gestionale dedicato a '}
               <a 
-                href="https://bitora.it" 
+                href="https://www.mistralimpianti.it" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors font-semibold"
               >
-                Bitora.it
+                Mistral Impianti S.R.L.
               </a>
             </p>
-            <p>© {new Date().getFullYear()} Bitora.it - Tutti i diritti riservati</p>
+            <p>© {new Date().getFullYear()} Mistral Impianti S.R.L. - Tutti i diritti riservati</p>
           </div>
         </div>
       </div>

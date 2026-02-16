@@ -38,6 +38,7 @@ function getAuthHeaders(): HeadersInit {
   if (user) {
     headers['X-User-Id'] = user.id;
     headers['X-User-Ruolo'] = user.ruolo;
+    headers['X-Org-Id'] = user.org_id || 'base';
   }
   
   return headers;

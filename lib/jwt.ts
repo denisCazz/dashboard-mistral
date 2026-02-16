@@ -11,6 +11,8 @@ export interface TokenPayload extends JWTPayload {
   userId: string;
   username: string;
   ruolo: 'admin' | 'operatore';
+  org_id: string;
+  idsocieta?: string;
   type: 'access' | 'refresh';
 }
 
@@ -39,11 +41,12 @@ export async function verifyToken(token: string): Promise<TokenPayload | null> {
   }
 }
 
-export async function createTokenPair(user: { id: string; username: string; ruolo: 'admin' | 'operatore' }) {
+export async function createTokenPair(user: { id: string; username: string; ruolo: 'admin' | 'operatore'; org_id: string }) {
   const payload = {
     userId: user.id,
     username: user.username,
     ruolo: user.ruolo,
+    org_id: user.org_id,
   };
 
   const [accessToken, refreshToken] = await Promise.all([

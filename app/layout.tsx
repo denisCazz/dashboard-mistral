@@ -18,39 +18,39 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  title: 'Bitora - Gestione Rapportini',
-  description: 'Sistema per la gestione dei rapportini di assistenza stufe a pellet e legno',
+  title: 'Mistral Impianti - Gestionale Interventi',
+  description: 'Gestionale per interventi, manutenzioni e rapportini di Mistral Impianti',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Bitora - Gestione Rapportini',
+    title: 'Mistral Impianti',
   },
   icons: {
     icon: '/favicon.ico',
     shortcut: '/favicon.ico',
-    apple: '/logo.png',
+    apple: '/logo.jpg',
   },
   openGraph: {
-    title: 'Bitora - Gestione Rapportini',
-    description: 'Sistema per la gestione dei rapportini di assistenza stufe a pellet e legno',
+    title: 'Mistral Impianti - Gestionale Interventi',
+    description: 'Gestionale per interventi, manutenzioni e rapportini di Mistral Impianti',
     images: [
       {
-        url: '/logo.png',
+        url: '/logo.jpg',
         width: 1200,
         height: 630,
-        alt: 'Bitora Logo',
+        alt: 'Mistral Impianti Logo',
       },
     ],
     type: 'website',
     locale: 'it_IT',
-    siteName: 'Bitora - Gestione Rapportini',
+    siteName: 'Mistral Impianti - Gestionale Interventi',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Bitora - Gestione Rapportini',
-    description: 'Sistema per la gestione dei rapportini di assistenza stufe a pellet e legno',
-    images: ['/logo.png'],
+    title: 'Mistral Impianti - Gestionale Interventi',
+    description: 'Gestionale per interventi, manutenzioni e rapportini di Mistral Impianti',
+    images: ['/logo.jpg'],
   },
 }
 
@@ -59,35 +59,62 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  const isProduction = process.env.NODE_ENV === 'production'
+
   return (
     <html lang="it">
       <head>
-        <link rel="apple-touch-icon" href="/logo.png" />
+        <link rel="apple-touch-icon" href="/logo.jpg" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
       </head>
       <body className={inter.className}>
         {children}
-        <Script
-          id="register-sw"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `
-              if ('serviceWorker' in navigator) {
-                window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('/sw.js').then(
-                    function(registration) {
-                      console.log('ServiceWorker registration successful');
-                    },
-                    function(err) {
-                      console.log('ServiceWorker registration failed: ', err);
-                    }
-                  );
-                });
-              }
-            `,
-          }}
-        />
+        {isProduction ? (
+          <Script
+            id="register-sw"
+            strategy="afterInteractive"
+            dangerouslySetInnerHTML={{
+              __html: `
+                if ('serviceWorker' in navigator) {
+                  window.addEventListener('load', function() {
+                    navigator.serviceWorker.register('/sw.js').then(
+                      function() {
+                        console.log('ServiceWorker registration successful');
+                      },
+                      function(err) {
+                        console.log('ServiceWorker registration failed: ', err);
+                      }
+                    );
+                  });
+                }
+              `,
+            }}
+          />
+        ) : (
+          <Script
+            id="cleanup-sw-dev"
+            strategy="afterInteractive"
+            dangerouslySetInnerHTML={{
+              __html: `
+                if ('serviceWorker' in navigator) {
+                  navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                    registrations.forEach(function(registration) {
+                      registration.unregister();
+                    });
+                  });
+                }
+                if ('caches' in window) {
+                  caches.keys().then(function(keys) {
+                    keys.forEach(function(key) {
+                      caches.delete(key);
+                    });
+                  });
+                }
+              `,
+            }}
+          />
+        )}
       </body>
     </html>
   )

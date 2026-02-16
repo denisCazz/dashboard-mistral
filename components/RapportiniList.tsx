@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Rapportino, AziendaSettings } from '@/types';
 import { format } from 'date-fns';
 import RapportinoDetail from './RapportinoDetail';
+import { INTERVENTO_CATEGORIE, getCategoriaBadgeClass, getCategoriaIcon, getCategoriaLabel } from '@/lib/intervento-categorie';
 
 interface RapportiniListProps {
   rapportini: Rapportino[];
@@ -13,7 +14,7 @@ interface RapportiniListProps {
 
 export default function RapportiniList({ rapportini, onDelete, settings }: RapportiniListProps) {
   const [selectedRapportino, setSelectedRapportino] = useState<Rapportino | null>(null);
-  const [filter, setFilter] = useState<'all' | 'pellet' | 'legno'>('all');
+  const [filter, setFilter] = useState<'all' | string>('all');
 
   const filteredRapportini = rapportini.filter((r) => {
     if (filter === 'all') return true;
@@ -58,7 +59,7 @@ export default function RapportiniList({ rapportini, onDelete, settings }: Rappo
             </h2>
             <p className="text-sm text-gray-600 dark:text-gray-400">
               {rapportini.length} {rapportini.length === 1 ? 'rapportino' : 'rapportini'} totali
-              {filter !== 'all' && ` • ${filteredRapportini.length} ${filter === 'pellet' ? 'pellet' : 'legno'}`}
+              {filter !== 'all' && ` • ${filteredRapportini.length} categoria ${getCategoriaLabel(filter)}`}
             </p>
           </div>
           <div className="flex gap-2 bg-gray-100 dark:bg-gray-700 p-1 rounded-lg">
@@ -72,26 +73,19 @@ export default function RapportiniList({ rapportini, onDelete, settings }: Rappo
             >
               Tutti
             </button>
-            <button
-              onClick={() => setFilter('pellet')}
-              className={`px-4 py-2 rounded-md transition-all text-sm font-medium ${
-                filter === 'pellet'
-                  ? 'bg-white dark:bg-gray-600 text-orange-600 dark:text-orange-400 shadow-sm'
-                  : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
-              }`}
-            >
-              🔥 Pellet
-            </button>
-            <button
-              onClick={() => setFilter('legno')}
-              className={`px-4 py-2 rounded-md transition-all text-sm font-medium ${
-                filter === 'legno'
-                  ? 'bg-white dark:bg-gray-600 text-amber-600 dark:text-amber-400 shadow-sm'
-                  : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
-              }`}
-            >
-              🪵 Legno
-            </button>
+            {INTERVENTO_CATEGORIE.map((categoria) => (
+              <button
+                key={categoria}
+                onClick={() => setFilter(categoria)}
+                className={`px-4 py-2 rounded-md transition-all text-sm font-medium ${
+                  filter === categoria
+                    ? 'bg-white dark:bg-gray-600 text-primary-600 dark:text-primary-400 shadow-sm'
+                    : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+                }`}
+              >
+                {getCategoriaIcon(categoria)} {getCategoriaLabel(categoria)}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -110,13 +104,9 @@ export default function RapportiniList({ rapportini, onDelete, settings }: Rappo
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 mb-3 flex-wrap">
                       <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          rapportino.intervento.tipoStufa === 'pellet'
-                            ? 'bg-orange-100 dark:bg-orange-900/50 text-orange-800 dark:text-orange-200 border border-orange-200 dark:border-orange-800'
-                            : 'bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-800'
-                        }`}
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${getCategoriaBadgeClass(rapportino.intervento.tipoStufa)}`}
                       >
-                        {rapportino.intervento.tipoStufa === 'pellet' ? '🔥 Pellet' : '🪵 Legno'}
+                        {getCategoriaIcon(rapportino.intervento.tipoStufa)} {getCategoriaLabel(rapportino.intervento.tipoStufa)}
                       </span>
                       <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

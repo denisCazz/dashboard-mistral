@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
+import { INTERVENTO_CATEGORIE, getCategoriaLabel } from '@/lib/intervento-categorie';
 
 export interface FilterValues {
-  tipoStufa?: 'pellet' | 'legno';
+  tipoStufa?: 'antincendio' | 'manutenzione_elettrica' | 'termoidraulica' | 'pellet' | 'legno';
   dataInizio?: string;
   dataFine?: string;
   marca?: string;
@@ -121,19 +122,20 @@ export default function RapportiniFilters({ onFilterChange, initialFilters = {} 
               </div>
             </div>
 
-            {/* Tipo Stufa */}
+            {/* Categoria Impianto */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Tipo Stufa
+                Categoria Impianto
               </label>
               <select
                 value={filters.tipoStufa || ''}
-                onChange={(e) => handleChange('tipoStufa', e.target.value as 'pellet' | 'legno' | undefined)}
+                onChange={(e) => handleChange('tipoStufa', e.target.value as FilterValues['tipoStufa'])}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500"
               >
                 <option value="">Tutti</option>
-                <option value="pellet">Pellet</option>
-                <option value="legno">Legno</option>
+                {INTERVENTO_CATEGORIE.map((categoria) => (
+                  <option key={categoria} value={categoria}>{getCategoriaLabel(categoria)}</option>
+                ))}
               </select>
             </div>
 

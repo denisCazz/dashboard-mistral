@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import bcrypt from 'bcryptjs';
 import { registerSchema, validateRequest } from '@/lib/validation';
+import { getOrgIdFromRequest } from '@/lib/api-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,6 +10,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
   try {
     const userRole = request.headers.get('x-user-ruolo');
+    const orgId = getOrgIdFromRequest(request);
 
     if (userRole !== 'admin') {
       return NextResponse.json(
@@ -20,6 +22,7 @@ export async function GET(request: NextRequest) {
     const { data: utenti, error } = await supabase
       .from('utenti')
       .select('id, username, ruolo, nome, cognome, telefono, email, qualifica, attivo, ultimo_accesso, created_at')
+      .eq('org_id', orgId)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -38,6 +41,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const userRole = request.headers.get('x-user-ruolo');
+    const orgId = getOrgIdFromRequest(request);
 
     if (userRole !== 'admin') {
       return NextResponse.json(
@@ -63,8 +67,9 @@ export async function POST(request: NextRequest) {
     const { data: existingUser } = await supabase
       .from('utenti')
       .select('id')
+      .eq('org_id', orgId)
       .eq('username', username)
-      .single();
+      .maybeSingle();
 
     if (existingUser) {
       return NextResponse.json(
@@ -80,6 +85,7 @@ export async function POST(request: NextRequest) {
     const { data: newUser, error } = await supabase
       .from('utenti')
       .insert({
+        org_id: orgId,
         username,
         password_hash: passwordHash,
         nome,

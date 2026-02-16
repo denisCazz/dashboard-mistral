@@ -4,6 +4,7 @@ import { Rapportino, AziendaSettings } from '@/types';
 import { format } from 'date-fns';
 import { useEffect } from 'react';
 import { downloadPDF } from '@/lib/pdfGenerator';
+import { getCategoriaLabel } from '@/lib/intervento-categorie';
 
 interface RapportinoDetailProps {
   rapportino: Rapportino;
@@ -62,7 +63,7 @@ export default function RapportinoDetail({ rapportino, settings, onClose }: Rapp
                 <>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src="/logo.png"
+                    src="/logo.jpg"
                     alt={settings.nomeAzienda || 'Logo Azienda'}
                     className="h-12 w-auto sm:h-16 object-contain print:h-20"
                     onError={(e) => {
@@ -80,10 +81,10 @@ export default function RapportinoDetail({ rapportino, settings, onClose }: Rapp
               )}
               <div>
                 <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white print:text-3xl">
-                  {settings.nomeAzienda || 'Bitora - Gestione Rapportini'}
+                  {settings.nomeAzienda || 'Mistral Impianti - Gestionale Interventi'}
                 </h1>
                 <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 print:text-base">
-                  Sistema Gestione Interventi Stufe
+                  Sistema gestione interventi e manutenzioni impiantistiche
                 </p>
               </div>
             </div>
@@ -188,9 +189,9 @@ export default function RapportinoDetail({ rapportino, settings, onClose }: Rapp
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-300 print:text-base">Tipo Stufa</p>
+                <p className="text-sm text-gray-600 dark:text-gray-300 print:text-base">Categoria Impianto</p>
                 <p className="font-semibold text-gray-900 dark:text-white print:text-lg capitalize">
-                  {rapportino.intervento.tipoStufa === 'pellet' ? 'Pellet' : 'Legno'}
+                  {getCategoriaLabel(rapportino.intervento.tipoStufa)}
                 </p>
               </div>
               <div>

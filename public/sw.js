@@ -1,7 +1,6 @@
-// Service Worker per Bitora PWA
-const CACHE_NAME = 'bitora-v1';
-const STATIC_CACHE = 'bitora-static-v1';
-const DYNAMIC_CACHE = 'bitora-dynamic-v1';
+// Service Worker per Mistral PWA
+const STATIC_CACHE = 'mistral-static-v2';
+const DYNAMIC_CACHE = 'mistral-dynamic-v2';
 
 // Risorse da cacheare immediatamente
 const STATIC_ASSETS = [
@@ -9,7 +8,7 @@ const STATIC_ASSETS = [
   '/login',
   '/manifest.json',
   '/favicon.ico',
-  '/logo.png',
+  '/logo.jpg',
 ];
 
 // Installa il service worker
@@ -47,9 +46,18 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Non cacheare le API
-  if (url.pathname.startsWith('/api/')) {
-    event.respondWith(networkFirst(request));
+  // Cache API supporta solo GET: per tutti gli altri metodi passa diretto
+  if (request.method !== 'GET') {
+    return;
+  }
+
+  // Non interferire con API e richieste interne Next.js (RSC/HMR/assets)
+  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/_next/')) {
+    return;
+  }
+
+  // Non cacheare richieste con parametri speciali di Next.js
+  if (url.searchParams.has('__rsc') || url.searchParams.has('_rsc') || url.searchParams.has('__nextDataReq')) {
     return;
   }
 
@@ -77,7 +85,7 @@ async function cacheFirst(request) {
 
   try {
     const response = await fetch(request);
-    if (response.ok) {
+    if (response.ok && request.method === 'GET') {
       const cache = await caches.open(DYNAMIC_CACHE);
       cache.put(request, response.clone());
     }
@@ -92,7 +100,7 @@ async function cacheFirst(request) {
 async function networkFirst(request) {
   try {
     const response = await fetch(request);
-    if (response.ok) {
+    if (response.ok && request.method === 'GET') {
       const cache = await caches.open(DYNAMIC_CACHE);
       cache.put(request, response.clone());
     }
@@ -140,8 +148,8 @@ self.addEventListener('push', (event) => {
     const data = event.data.json();
     const options = {
       body: data.body,
-      icon: '/logo.png',
-      badge: '/logo.png',
+      icon: '/logo.jpg',
+      badge: '/logo.jpg',
       vibrate: [100, 50, 100],
       data: {
         url: data.url || '/',

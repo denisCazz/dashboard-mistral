@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { getOrgIdFromRequest } from '@/lib/api-auth';
 
 // GET - Ottieni modelli filtrati per marca
 export async function GET(request: NextRequest) {
   try {
+    const orgId = getOrgIdFromRequest(request);
     const { searchParams } = new URL(request.url);
     const marcaId = searchParams.get('marca_id');
 
     let query = supabase
       .from('modelli')
       .select('id, nome, marca_id')
+      .eq('org_id', orgId)
       .order('nome', { ascending: true });
 
     if (marcaId) {
@@ -33,6 +36,7 @@ export async function GET(request: NextRequest) {
 // POST - Crea un nuovo modello
 export async function POST(request: NextRequest) {
   try {
+    const orgId = getOrgIdFromRequest(request);
     const body = await request.json();
     const { nome, marca_id } = body;
 
@@ -50,9 +54,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const { data: marca } = await supabase
+      .from('marche')
+      .select('id')
+      .eq('org_id', orgId)
+      .eq('id', marca_id)
+      .maybeSingle();
+
+    if (!marca) {
+      return NextResponse.json(
+        { error: 'Marca non valida per la società corrente' },
+        { status: 400 }
+      );
+    }
+
     const { data: modello, error } = await supabase
       .from('modelli')
-      .insert({ nome: nome.trim(), marca_id })
+      .insert({ nome: nome.trim(), marca_id, org_id: orgId })
       .select('id, nome, marca_id')
       .single();
 
@@ -62,6 +80,7 @@ export async function POST(request: NextRequest) {
         const { data: existing } = await supabase
           .from('modelli')
           .select('id, nome, marca_id')
+          .eq('org_id', orgId)
           .eq('nome', nome.trim())
           .eq('marca_id', marca_id)
           .single();

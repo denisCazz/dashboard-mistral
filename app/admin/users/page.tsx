@@ -7,7 +7,7 @@ import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { auth } from '@/lib/auth';
 import { storage } from '@/lib/storage';
-import Header from '@/components/Header';
+import AppSidebarLayout from '@/components/AppSidebarLayout';
 import { AziendaSettings } from '@/types';
 
 interface User {
@@ -229,9 +229,20 @@ export default function UsersPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      <Header settings={settings} onLogout={handleLogout} />
-      
-      <main className="container mx-auto px-4 py-8 max-w-7xl">
+      <AppSidebarLayout
+        settings={settings}
+        onLogout={handleLogout}
+        title="Gestione Utenti"
+        subtitle="Crea, modifica e gestisci gli utenti"
+        actions={
+          <button
+            onClick={() => { resetForm(); setEditingUser(null); setShowModal(true); }}
+            className="px-3 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm"
+          >
+            Nuovo Utente
+          </button>
+        }
+      >
         <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <div className="flex items-center gap-3 mb-2">
@@ -244,15 +255,6 @@ export default function UsersPage() {
             </div>
             <p className="text-gray-600 dark:text-gray-300">Crea, modifica e gestisci gli utenti del sistema</p>
           </div>
-          <button
-            onClick={() => { resetForm(); setEditingUser(null); setShowModal(true); }}
-            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center gap-2"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Nuovo Utente
-          </button>
         </div>
 
         {error && (
@@ -358,7 +360,7 @@ export default function UsersPage() {
             </div>
           </div>
         )}
-      </main>
+      </AppSidebarLayout>
 
       {/* Modal Crea/Modifica Utente */}
       {showModal && (

@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import bcrypt from 'bcryptjs';
+import { normalizeOrgId } from '@/lib/api-auth';
 
 // POST - Registrazione nuovo utente (solo operatore)
 export async function POST(request: NextRequest) {
   try {
-    const { username, password, nome, cognome, telefono, email, qualifica } = await request.json();
+    const { username, password, nome, cognome, telefono, email, qualifica, org_id, idsocieta } = await request.json();
+    const tenantInput = org_id ?? idsocieta;
+    const orgId = normalizeOrgId(tenantInput);
 
     // Validazione
     if (!username || !password || !nome || !cognome || !telefono || !qualifica) {
@@ -22,45 +25,43 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verifica se l'username esiste già
-    const { data: existingUser, error: checkError } = await supabase
-      .from('utenti')
-      .select('id')
-      .eq('username', username)
-      .maybeSingle();
-
-    if (checkError && checkError.code !== 'PGRST116') {
-      throw checkError;
-    }
-
-    if (existingUser) {
-      return NextResponse.json(
-        { error: 'Username già esistente' },
-        { status: 409 }
-      );
-    }
-
     // Hash della password
     const passwordHash = await bcrypt.hash(password, 10);
 
     // Crea nuovo utente (SOLO operatore, non admin)
-    const { data: newUser, error: createError } = await supabase
+    const { error: createError } = await supabase
       .from('utenti')
       .insert({
         username,
         password_hash: passwordHash,
         ruolo: 'operatore', // FORZATO a operatore, non può essere admin
+        org_id: orgId,
         nome,
         cognome,
         telefono,
         email: email || null,
         qualifica,
         attivo: true,
-      })
-      .select('id, username, ruolo, nome, cognome, email')
-      .single();
+      });
 
     if (createError) {
+      if (createError.code === '23505') {
+        return NextResponse.json(
+          { error: 'Username già esistente' },
+          { status: 409 }
+        );
+      }
+
+      if (
+        createError.code === '42501' ||
+        createError.message?.toLowerCase().includes('row-level security')
+      ) {
+        return NextResponse.json(
+          { error: `Registrazione non consentita per org_id '${orgId}'. Verifica che l'organizzazione esista ed sia attiva.` },
+          { status: 403 }
+        );
+      }
+
       console.error('Error creating user:', createError);
       throw createError;
     }
@@ -69,9 +70,9 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Registrazione completata con successo',
       user: {
-        id: newUser.id,
-        username: newUser.username,
-        ruolo: newUser.ruolo,
+        username,
+        ruolo: 'operatore',
+        org_id: orgId,
       },
     });
   } catch (error: any) {
