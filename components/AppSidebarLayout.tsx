@@ -5,13 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { AziendaSettings } from '@/types';
 import { auth } from '@/lib/auth';
-
-interface SidebarItem {
-  label: string;
-  href: string;
-  icon: string;
-  adminOnly?: boolean;
-}
+import { getSidebarModules } from '@/lib/modules';
 
 interface AppSidebarLayoutProps {
   settings: AziendaSettings;
@@ -21,13 +15,6 @@ interface AppSidebarLayoutProps {
   children: React.ReactNode;
   actions?: React.ReactNode;
 }
-
-const SIDEBAR_ITEMS: SidebarItem[] = [
-  { label: 'Dashboard', href: '/', icon: '🏠' },
-  { label: 'Statistiche', href: '/admin', icon: '📊', adminOnly: true },
-  { label: 'Gestione Utenti', href: '/admin/users', icon: '👥', adminOnly: true },
-  { label: 'Moduli', href: '/#moduli', icon: '🧩' },
-];
 
 export default function AppSidebarLayout({ settings, title, subtitle, onLogout, children, actions }: AppSidebarLayoutProps) {
   const pathname = usePathname();
@@ -42,12 +29,13 @@ export default function AppSidebarLayout({ settings, title, subtitle, onLogout, 
 
   const navItems = useMemo(() => {
     const query = search.trim().toLowerCase();
+    const allItems = getSidebarModules(user?.ruolo).map((module) => ({
+      label: module.title,
+      href: module.href as string,
+      icon: module.icon,
+    }));
 
-    return SIDEBAR_ITEMS.filter((item) => {
-      if (item.adminOnly && user?.ruolo !== 'admin') {
-        return false;
-      }
-
+    return allItems.filter((item) => {
       if (!query) return true;
       return item.label.toLowerCase().includes(query);
     });

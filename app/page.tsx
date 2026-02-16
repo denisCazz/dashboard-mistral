@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { Rapportino, AziendaSettings } from '@/types';
 import { storage } from '@/lib/storage';
 import { auth } from '@/lib/auth';
@@ -11,6 +10,8 @@ import { Suspense, lazy } from 'react';
 import RapportiniList from '@/components/RapportiniList';
 import AppSidebarLayout from '@/components/AppSidebarLayout';
 import InstallPWA from '@/components/InstallPWA';
+import { isModuleEnabled } from '@/lib/modules';
+import DocumentAlertsWidget from '@/components/DocumentAlertsWidget';
 
 // Dynamic import per componenti pesanti - migliora il bundle splitting
 const RapportinoForm = lazy(() => import('@/components/RapportinoForm'));
@@ -120,48 +121,8 @@ export default function Home() {
     router.push('/login');
   };
 
-  const moduliGestionali = [
-    {
-      titolo: 'Rapportini Intervento',
-      descrizione: 'Creazione, storico e stampa dei rapportini tecnici.',
-      stato: 'Attivo',
-      colore: 'text-emerald-600 dark:text-emerald-400',
-      bg: 'bg-emerald-100 dark:bg-emerald-900/30',
-      icona: '📝',
-    },
-    {
-      titolo: 'Interventi Programmati',
-      descrizione: 'Pianificazione attività su impianti elettrici, speciali e antincendio.',
-      stato: 'Roadmap',
-      colore: 'text-indigo-600 dark:text-indigo-400',
-      bg: 'bg-indigo-100 dark:bg-indigo-900/30',
-      icona: '📅',
-    },
-    {
-      titolo: 'Manutenzioni Periodiche',
-      descrizione: 'Gestione ricorrenze e checklist manutentive per cliente e sito.',
-      stato: 'Roadmap',
-      colore: 'text-sky-600 dark:text-sky-400',
-      bg: 'bg-sky-100 dark:bg-sky-900/30',
-      icona: '🛠️',
-    },
-    {
-      titolo: 'Clienti & Sedi',
-      descrizione: 'Anagrafiche clienti, contatti e localizzazioni operative.',
-      stato: 'Parziale',
-      colore: 'text-amber-600 dark:text-amber-400',
-      bg: 'bg-amber-100 dark:bg-amber-900/30',
-      icona: '🏢',
-    },
-    {
-      titolo: 'Scadenze & Compliance',
-      descrizione: 'Monitoraggio scadenze documentali e verifiche impiantistiche.',
-      stato: 'Roadmap',
-      colore: 'text-violet-600 dark:text-violet-400',
-      bg: 'bg-violet-100 dark:bg-violet-900/30',
-      icona: '⏱️',
-    },
-  ];
+  const rapportiniEnabled = isModuleEnabled('rapportini');
+  const exportPdfEnabled = isModuleEnabled('esportazione_pdf');
 
   if (!isAuthenticated) {
     return null; // Mostra nulla mentre verifica l'autenticazione
@@ -185,18 +146,22 @@ export default function Home() {
         subtitle="Gestionale operativo per interventi e manutenzioni"
         actions={(
           <>
-            <button
-              onClick={() => setShowForm(true)}
-              className="px-3 py-2 sm:px-3.5 sm:py-2.5 bg-gradient-to-r from-primary-500 to-indigo-500 text-white rounded-xl hover:from-primary-600 hover:to-indigo-600 text-xs sm:text-sm font-semibold shadow-lg shadow-primary-500/25 transition-all hover:-translate-y-0.5"
-            >
-              Nuovo Rapportino
-            </button>
-            <button
-              onClick={handleExportPDFs}
-              className="px-3 py-2 sm:px-3.5 sm:py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl hover:from-emerald-600 hover:to-teal-600 text-xs sm:text-sm font-semibold shadow-lg shadow-emerald-500/25 transition-all hover:-translate-y-0.5"
-            >
-              Esporta PDF
-            </button>
+            {rapportiniEnabled && (
+              <button
+                onClick={() => setShowForm(true)}
+                className="px-3 py-2 sm:px-3.5 sm:py-2.5 bg-gradient-to-r from-primary-500 to-indigo-500 text-white rounded-xl hover:from-primary-600 hover:to-indigo-600 text-xs sm:text-sm font-semibold shadow-lg shadow-primary-500/25 transition-all hover:-translate-y-0.5"
+              >
+                Nuovo Rapportino
+              </button>
+            )}
+            {rapportiniEnabled && exportPdfEnabled && (
+              <button
+                onClick={handleExportPDFs}
+                className="px-3 py-2 sm:px-3.5 sm:py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl hover:from-emerald-600 hover:to-teal-600 text-xs sm:text-sm font-semibold shadow-lg shadow-emerald-500/25 transition-all hover:-translate-y-0.5"
+              >
+                Esporta PDF
+              </button>
+            )}
           </>
         )}
       >
@@ -217,54 +182,17 @@ export default function Home() {
             <div className="grid grid-cols-2 gap-3 w-full sm:w-auto min-w-0 sm:min-w-[220px]">
               <div className="rounded-xl border border-gray-200/70 dark:border-gray-700 bg-white/80 dark:bg-gray-800/70 p-3">
                 <p className="text-xs text-gray-500 dark:text-gray-400">Totale rapportini</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{rapportini.length}</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{rapportiniEnabled ? rapportini.length : '-'}</p>
               </div>
               <div className="rounded-xl border border-gray-200/70 dark:border-gray-700 bg-white/80 dark:bg-gray-800/70 p-3">
                 <p className="text-xs text-gray-500 dark:text-gray-400">Mese corrente</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{rapportiniMese}</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{rapportiniEnabled ? rapportiniMese : '-'}</p>
               </div>
             </div>
           </div>
         </div>
 
-        <section id="moduli" className="mb-8">
-          <div className="glass-card rounded-2xl shadow-xl shadow-slate-900/5 border border-white/70 dark:border-gray-700/70 p-6">
-            <div className="flex items-start justify-between gap-4 mb-5">
-              <div>
-                <h2 className="text-xl font-extrabold tracking-tight text-gray-900 dark:text-white">Moduli gestionali</h2>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                  Base operativa per un gestionale Mistral Impianti più completo
-                </p>
-              </div>
-              <Link
-                href="/admin"
-                className="text-sm font-semibold text-primary-700 dark:text-primary-300 hover:text-primary-800 dark:hover:text-primary-200 bg-primary-50/80 dark:bg-primary-900/20 border border-primary-200/70 dark:border-primary-800/70 rounded-full px-3 py-1.5"
-              >
-                Vai alle statistiche →
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {moduliGestionali.map((modulo) => (
-                <div
-                  key={modulo.titolo}
-                  className="group rounded-xl border border-gray-200/80 dark:border-gray-700 p-4 bg-white/70 dark:bg-gray-900/40 hover:shadow-lg hover:shadow-primary-900/5 hover:-translate-y-0.5 transition-all"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                      <span className="group-hover:scale-110 transition-transform">{modulo.icona}</span>
-                      <span>{modulo.titolo}</span>
-                    </h3>
-                    <span className={`text-xs font-semibold px-2 py-1 rounded-full ${modulo.colore} ${modulo.bg}`}>
-                      {modulo.stato}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">{modulo.descrizione}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+        {isModuleEnabled('scadenze_compliance') && <DocumentAlertsWidget />}
 
         {error && (
           <div className="mb-6 bg-red-50/90 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 shadow-lg shadow-red-900/5">
@@ -283,7 +211,7 @@ export default function Home() {
           </div>
         )}
 
-        {showForm && (
+        {rapportiniEnabled && showForm && (
           <Suspense fallback={
             <div className="glass-card rounded-2xl shadow-xl p-12 text-center border border-white/70 dark:border-gray-700/70">
               <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
@@ -297,7 +225,13 @@ export default function Home() {
           </Suspense>
         )}
 
-        {loading ? (
+        {!rapportiniEnabled ? (
+          <div className="glass-card rounded-2xl shadow-xl p-8 text-center border border-white/70 dark:border-gray-700/70">
+            <p className="text-gray-700 dark:text-gray-300">
+              Il modulo rapportini è disattivato. Imposta NEXT_PUBLIC_MODULE_RAPPORTINI_ENABLED=true nel file .env.
+            </p>
+          </div>
+        ) : loading ? (
           <div className="glass-card rounded-2xl shadow-xl p-12 text-center border border-white/70 dark:border-gray-700/70">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
             <p className="mt-4 text-gray-600 dark:text-gray-300">Caricamento rapportini...</p>
