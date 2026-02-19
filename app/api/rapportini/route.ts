@@ -250,7 +250,7 @@ export async function POST(request: NextRequest) {
     let clienteId: string | null = null;
 
     // Prima cerca per nome + cognome + telefono (match esatto)
-    let { data: clienteData } = await supabase
+    const { data: clienteData } = await supabase
       .from('clienti')
       .select('id')
       .eq('org_id', effectiveOrgId)

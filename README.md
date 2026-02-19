@@ -142,8 +142,8 @@ Dopo aver eseguito lo schema SQL, sono disponibili due utenti:
 
 ## 🛠️ Tecnologie Utilizzate
 
-- Next.js 14
-- React 18
+- Next.js 16
+- React 19
 - TypeScript
 - Tailwind CSS
 - Supabase

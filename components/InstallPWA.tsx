@@ -105,7 +105,7 @@ export default function InstallPWA() {
               Installa Mistral Impianti
             </h3>
             <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
-              Installa l'app per un accesso più rapido e funzionalità offline
+              Installa l&apos;app per un accesso più rapido e funzionalità offline
             </p>
             <div className="flex gap-2">
               <button

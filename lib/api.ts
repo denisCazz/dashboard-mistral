@@ -62,7 +62,7 @@ async function apiFetch(url: string, options: RequestInit = {}, retry = true): P
 }
 
 // Helper per costruire query string
-function buildQueryString(params: Record<string, any>): string {
+function buildQueryString(params: Record<string, unknown>): string {
   const searchParams = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== '') {
@@ -77,7 +77,7 @@ export const api = {
   // Ottieni tutti i rapportini (filtrati per utente se operatore)
   getRapportini: async (filters?: RapportiniFilters): Promise<Rapportino[]> => {
     const headers = getAuthHeaders();
-    const queryString = filters ? buildQueryString(filters) : '';
+    const queryString = filters ? buildQueryString(filters as Record<string, unknown>) : '';
     const response = await apiFetch(`${API_BASE}/rapportini${queryString}`, {
       headers,
     });
@@ -92,7 +92,7 @@ export const api = {
   // Ottieni rapportini con paginazione
   getRapportiniPaginated: async (filters?: RapportiniFilters): Promise<PaginatedResponse<Rapportino>> => {
     const headers = getAuthHeaders();
-    const queryString = filters ? buildQueryString(filters) : '';
+    const queryString = filters ? buildQueryString(filters as Record<string, unknown>) : '';
     const response = await apiFetch(`${API_BASE}/rapportini${queryString}`, {
       headers,
     });

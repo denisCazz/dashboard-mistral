@@ -92,14 +92,11 @@ export async function POST(request: NextRequest) {
     }
 
     if (error || !utente) {
-      console.log('Utente non trovato:', username, 'org_id:', requestedOrgId);
       return NextResponse.json(
         { error: 'Credenziali non valide' },
         { status: 401 }
       );
     }
-
-    console.log('Utente trovato:', utente.username, 'ruolo:', utente.ruolo, 'attivo:', utente.attivo);
 
     if (!utente.attivo) {
       return NextResponse.json(

@@ -160,11 +160,11 @@ export const auth = {
   },
 };
 
-// Dati operatore predefiniti
+// Dati operatore predefiniti (configurabili via env)
 export const DEFAULT_OPERATORE = {
-  nome: 'Gianfranco',
-  cognome: 'Tropini',
-  telefono: '+39 333 1234567',
-  email: 'gianfranco.tropini@mistralimpianti.it',
-  qualifica: 'Tecnico specializzato',
+  nome: process.env.NEXT_PUBLIC_DEFAULT_OPERATORE_NOME || 'Gianfranco',
+  cognome: process.env.NEXT_PUBLIC_DEFAULT_OPERATORE_COGNOME || 'Tropini',
+  telefono: process.env.NEXT_PUBLIC_DEFAULT_OPERATORE_TELEFONO || '+39 333 1234567',
+  email: process.env.NEXT_PUBLIC_DEFAULT_OPERATORE_EMAIL || 'gianfranco.tropini@mistralimpianti.it',
+  qualifica: process.env.NEXT_PUBLIC_DEFAULT_OPERATORE_QUALIFICA || 'Tecnico specializzato',
 };
